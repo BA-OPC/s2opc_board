@@ -65,6 +65,13 @@
 #include "static_security_data.h"
 #include "test_config.h"
 
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/adc.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
+
 /***************************************************/
 /**               MISC FUNCTIONS                   */
 /***************************************************/
@@ -83,17 +90,19 @@ static const char* g_userNamespaces[2] = {"urn:S2OPC:sopc_demo", NULL};
 static const char* g_localesArray[2] = {LOCALE_ID, NULL};
 
 // generated address space.
-extern const bool sopc_embedded_is_const_addspace;
-extern SOPC_AddressSpace_Node SOPC_Embedded_AddressSpace_Nodes[];
-extern const uint32_t SOPC_Embedded_AddressSpace_nNodes;
-extern const uint32_t SOPC_Embedded_VariableVariant_nb;
-extern SOPC_Variant SOPC_Embedded_VariableVariant[];
+// extern const bool sopc_embedded_is_const_addspace;
+// extern SOPC_AddressSpace_Node SOPC_Embedded_AddressSpace_Nodes[];
+// extern const uint32_t SOPC_Embedded_AddressSpace_nNodes;
+// extern const uint32_t SOPC_Embedded_VariableVariant_nb;
+// extern SOPC_Variant SOPC_Embedded_VariableVariant[];
 
 /***************************************************/
 /**               SERVER VARIABLES CONTENT         */
 /***************************************************/
 static int32_t gStopped = true;
 static Thread CLI_thread;
+
+static int32_t value_PubSubStartStop = 0;
 
 static SOPC_Endpoint_Config* g_epConfig = NULL;
 static SOPC_ReturnStatus authentication_check(SOPC_UserAuthentication_Manager* authn,
@@ -109,6 +118,14 @@ static void serverWriteEvent(const SOPC_CallContext* callCtxPtr,
 static void localServiceAsyncRespCallback(SOPC_EncodeableType* encType, void* response, uintptr_t appContext);
 static bool Server_LocalWriteSingleNode(const SOPC_NodeId* pNid, SOPC_DataValue* pDv);
 static SOPC_DataValue* Server_LocalReadSingleNode(const SOPC_NodeId* pNid);
+static int write_tank_level(double tank_level);
+static int write_underflow_warning(double tank_level);
+static int write_overflow_warning(double tank_level);
+static int write_measured_force(double measured_force);
+static int write_ADC(double raw_voltage);
+static int read_tara(double* tara);
+static int read_slope(double* slope);
+static int update_publisher(void);
 
 /***************************************************/
 /**               PUBSUB VARIABLES CONTENT         */
@@ -131,6 +148,19 @@ static SOPC_RealTime* gLastReceptionDateMs = NULL;
 #define LOG_ERROR(...) SOPC_Logger_TraceError(SOPC_LOG_MODULE_CLIENTSERVER, __VA_ARGS__)
 #define PRINT printf
 #define YES_NO(x) ((x) ? "YES" : "NO")
+
+/***************************************************/
+/**               Stuff from ADC-example           */
+/***************************************************/
+#if !DT_NODE_EXISTS(DT_PATH(zephyr_user)) || !DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
+#error "No suitable devicetree overlay specified"
+#endif
+
+#define DT_SPEC_AND_COMMA(node_id, prop, idx) ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+
+/* Data of ADC io-channels specified in devicetree. */
+static const struct adc_dt_spec adc_channels[] = {
+    DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, DT_SPEC_AND_COMMA)};
 
 /***************************************************/
 /**          CLIENT LINE INTERFACE                 */
@@ -495,17 +525,17 @@ static void setupServer(void)
 
     //////////////////////////////////
     // Setup AddressSpace
-    (void) sopc_embedded_is_const_addspace;
-    SOPC_ASSERT(sopc_embedded_is_const_addspace && "Address space must be constant.");
-    LOG_INFO("# Loading AddressSpace (%u nodes)...\n", SOPC_Embedded_AddressSpace_nNodes);
-    SOPC_AddressSpace* addSpace =
-        SOPC_AddressSpace_CreateReadOnlyNodes(SOPC_Embedded_AddressSpace_nNodes, SOPC_Embedded_AddressSpace_Nodes,
-                                              SOPC_Embedded_VariableVariant_nb, SOPC_Embedded_VariableVariant);
-    SOPC_ASSERT(NULL != addSpace && "SOPC_AddressSpace_Create failed");
-    LOG_INFO("# Address space loaded\n");
+    // (void) sopc_embedded_is_const_addspace;
+    // SOPC_ASSERT(sopc_embedded_is_const_addspace && "Address space must be constant.");
+    // LOG_INFO("# Loading AddressSpace (%u nodes)...\n", SOPC_Embedded_AddressSpace_nNodes);
+    // SOPC_AddressSpace* addSpace =
+    //     SOPC_AddressSpace_CreateReadOnlyNodes(SOPC_Embedded_AddressSpace_nNodes, SOPC_Embedded_AddressSpace_Nodes,
+    //                                           SOPC_Embedded_VariableVariant_nb, SOPC_Embedded_VariableVariant);
+    // SOPC_ASSERT(NULL != addSpace && "SOPC_AddressSpace_Create failed");
+    //LOG_INFO("# Address space loaded\n");
 
-    status = SOPC_HelperConfigServer_SetAddressSpace(addSpace);
-    SOPC_ASSERT(NULL != addSpace && "SOPC_HelperConfigServer_SetAddressSpace failed");
+    //status = SOPC_HelperConfigServer_SetAddressSpace(addSpace);
+    //SOPC_ASSERT(NULL != addSpace && "SOPC_HelperConfigServer_SetAddressSpace failed");
 
     SOPC_UserAuthorization_Manager* authorizationManager = SOPC_UserAuthorization_CreateManager_AllowAll();
     SOPC_ASSERT(NULL != authorizationManager && "Failed to allocate SOPC_UserAuthentication_Manager");
@@ -680,11 +710,54 @@ static void* CLI_thread_exec(void* arg)
     return NULL;
 }
 
+void _le_mock()
+{
+    setupServer();
+    SOPC_Atomic_Int_Set(&gStopped, 0);
+    SOPC_ReturnStatus status = SOPC_ServerHelper_StartServer(&serverStopped_cb);
+    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_ServerHelper_StartServer failed");
+}
+
 /***************************************************/
 void SOPC_Platform_Main(void)
 {
     SOPC_ReturnStatus status;
     PRINT("Build date : " __DATE__ " " __TIME__ "\n");
+
+    int i = 0;
+    int temp = 0;
+    int32_t val_mv;
+
+    double tank_level = 0;
+    double measured_force = 0;
+    double tara = 0;
+    double adc = 0;
+    double slope = 0;
+
+    int err;
+    int16_t buf;
+    struct adc_sequence sequence = {
+        .buffer = &buf,
+        /* buffer size in bytes, not number of samples */
+        .buffer_size = sizeof(buf),
+    };
+
+    /* Configure channels individually prior to sampling. */
+    for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++)
+    {
+        if (!device_is_ready(adc_channels[i].dev))
+        {
+            printf("ADC controller device not ready\n");
+            return;
+        }
+
+        err = adc_channel_setup_dt(&adc_channels[i]);
+        if (err < 0)
+        {
+            printf("Could not setup channel #%d (%d)\n", i, err);
+            return;
+        }
+    }
 
     /* Setup platform-dependant features (network, ...)*/
     SOPC_Platform_Setup();
@@ -699,14 +772,14 @@ void SOPC_Platform_Main(void)
 
     gLastReceptionDateMs = SOPC_RealTime_Create(NULL);
 
-    setupServer();
+    //setupServer();
     setupPubSub();
 
     //////////////////////////////////
     // Start the server
     SOPC_Atomic_Int_Set(&gStopped, 0);
-    status = SOPC_ServerHelper_StartServer(&serverStopped_cb);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_ServerHelper_StartServer failed");
+    // status = SOPC_ServerHelper_StartServer(&serverStopped_cb);
+    // SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_ServerHelper_StartServer failed");
 
     // Check for server status after some time. (Start is asynchronous)
     SOPC_Sleep(100);
@@ -719,11 +792,58 @@ void SOPC_Platform_Main(void)
     status = SOPC_Thread_Create(&CLI_thread, &CLI_thread_exec, NULL, "CLI");
     SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_Thread_Create failed");
 
+    // start publisher
+    do {
+        bool bResult;
+        bResult = SOPC_PubScheduler_Start(pPubSubConfig, pSourceConfig, CONFIG_SOPC_PUBLISHER_PRIORITY);
+        if (!bResult) {
+            PRINT("\r\nFailed to start Publisher!\r\n");
+
+        } else {
+            gPubStarted = true;
+            PRINT("\r\nPublisher started\r\n");
+        }
+    } while (0);
+
     // Wait for termination
     while (SOPC_Atomic_Int_Get(&gStopped) == 0)
     {
         // Process command line if any
         SOPC_Sleep(50);
+
+        i++;
+        if (i == 20)
+        {
+            i = 0;
+            temp++;
+            if (temp == 10)
+            {
+                temp = 0;
+            }
+
+            read_tara(&tara);
+
+            /* Read the ADC, and convert it into liters*/
+            // printf("ADC reading:- %s, channel %d: ", adc_channels[0].dev->name, adc_channels[0].channel_id);
+            (void) adc_sequence_init_dt(&adc_channels[0], &sequence);
+            err = adc_read(adc_channels[0].dev, &sequence);
+            // printf("%" PRId16, buf);
+            val_mv = buf;
+            err = adc_raw_to_millivolts_dt(&adc_channels[0], &val_mv);
+            // printf(" = %" PRId32 " mV\n", val_mv);
+            adc = (double) val_mv / 1000;
+            write_ADC(adc);
+            read_slope(&slope);
+            measured_force = (adc * slope); // 1.5kg => 15N => 2.4V  --> divide vy 0.16
+            write_measured_force(measured_force);
+            tank_level = measured_force / 10 - tara;
+
+            write_tank_level(tank_level);
+            write_overflow_warning(tank_level);
+            write_underflow_warning(tank_level);
+
+            update_publisher();
+        }
     }
 
     SOPC_Atomic_Int_Set(&gStopped, 1);
@@ -739,6 +859,244 @@ void SOPC_Platform_Main(void)
     LOG_INFO("# Info: Server closed.\n");
 
     SOPC_Platform_Shutdown(true);
+}
+
+/***************************************************/
+static int write_tank_level(double tank_level)
+{
+    char nID_char_Tanklevel[20] = "ns=1;s=TankLevel";
+    SOPC_NodeId nid;
+    SOPC_ReturnStatus status =
+        SOPC_NodeId_InitializeFromCString(&nid, nID_char_Tanklevel, (int32_t) strlen(nID_char_Tanklevel));
+    SOPC_ASSERT(SOPC_STATUS_OK == status);
+    SOPC_DataValue dv;
+    SOPC_DataValue_Initialize(&dv);
+
+    dv.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+    dv.Value.DoNotClear = false;
+    dv.Value.BuiltInTypeId = SOPC_Double_Id;
+    dv.Value.Value.Doublev = tank_level;
+
+    Server_LocalWriteSingleNode(&nid, &dv);
+
+    SOPC_NodeId_Clear(&nid);
+    SOPC_DataValue_Clear(&dv);
+    return 0;
+}
+
+static int write_measured_force(double measured_force)
+{
+    char nID_char_MeasuredForce[20] = "ns=1;s=Force";
+    SOPC_NodeId nid;
+    SOPC_ReturnStatus status =
+        SOPC_NodeId_InitializeFromCString(&nid, nID_char_MeasuredForce, (int32_t) strlen(nID_char_MeasuredForce));
+    SOPC_ASSERT(SOPC_STATUS_OK == status);
+    SOPC_DataValue dv;
+    SOPC_DataValue_Initialize(&dv);
+
+    dv.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+    dv.Value.DoNotClear = false;
+    dv.Value.BuiltInTypeId = SOPC_Double_Id;
+    dv.Value.Value.Doublev = measured_force;
+
+    Server_LocalWriteSingleNode(&nid, &dv);
+
+    SOPC_NodeId_Clear(&nid);
+    SOPC_DataValue_Clear(&dv);
+    return 0;
+}
+static int write_ADC(double raw_voltage)
+{
+    char nID_char_RawVoltage[20] = "ns=1;s=RawVoltage";
+    SOPC_NodeId nid;
+    SOPC_ReturnStatus status =
+        SOPC_NodeId_InitializeFromCString(&nid, nID_char_RawVoltage, (int32_t) strlen(nID_char_RawVoltage));
+    SOPC_ASSERT(SOPC_STATUS_OK == status);
+    SOPC_DataValue dv;
+    SOPC_DataValue_Initialize(&dv);
+
+    dv.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+    dv.Value.DoNotClear = false;
+    dv.Value.BuiltInTypeId = SOPC_Double_Id;
+    dv.Value.Value.Doublev = raw_voltage;
+
+    Server_LocalWriteSingleNode(&nid, &dv);
+
+    SOPC_NodeId_Clear(&nid);
+    SOPC_DataValue_Clear(&dv);
+    return 0;
+}
+
+static int write_overflow_warning(double tank_level)
+{
+    char nID_char_Tank_lim_hi[30] = "ns=1;s=HiLimitTankLevel";
+    char nID_char_Tank_above[30] = "ns=1;s=LevelAboveHigh";
+
+    SOPC_NodeId nid_read;
+    SOPC_ReturnStatus status =
+        SOPC_NodeId_InitializeFromCString(&nid_read, nID_char_Tank_lim_hi, (int32_t) strlen(nID_char_Tank_lim_hi));
+    SOPC_ASSERT(SOPC_STATUS_OK == status);
+    SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
+    if (NULL == dv_read)
+    {
+        PRINT("Failed to read node '%s'\n", nID_char_Tank_lim_hi);
+        SOPC_NodeId_Clear(&nid_read);
+        return 1;
+    }
+
+    SOPC_NodeId nid_write;
+    status = SOPC_NodeId_InitializeFromCString(&nid_write, nID_char_Tank_above, (int32_t) strlen(nID_char_Tank_above));
+    SOPC_ASSERT(SOPC_STATUS_OK == status);
+    SOPC_DataValue dv_write;
+    SOPC_DataValue_Initialize(&dv_write);
+    dv_write.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+    dv_write.Value.DoNotClear = false;
+    dv_write.Value.BuiltInTypeId = SOPC_Boolean_Id;
+    dv_write.Value.Value.Boolean = tank_level > dv_read->Value.Value.Doublev;
+    Server_LocalWriteSingleNode(&nid_write, &dv_write);
+    SOPC_NodeId_Clear(&nid_write);
+    SOPC_DataValue_Clear(&dv_write);
+
+    SOPC_NodeId_Clear(&nid_read);
+    SOPC_DataValue_Clear(dv_read);
+    SOPC_Free(dv_read);
+    return 0;
+}
+
+static int read_tara(double* tara)
+{
+    char nID_char_tara[20] = "ns=1;s=Tara";
+
+    SOPC_NodeId nid_read;
+    SOPC_ReturnStatus status =
+        SOPC_NodeId_InitializeFromCString(&nid_read, nID_char_tara, (int32_t) strlen(nID_char_tara));
+    SOPC_ASSERT(SOPC_STATUS_OK == status);
+    SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
+    if (NULL == dv_read)
+    {
+        PRINT("Failed to read node '%s'\n", nID_char_tara);
+        SOPC_NodeId_Clear(&nid_read);
+        return 1;
+    }
+
+    *tara = dv_read->Value.Value.Doublev;
+
+    SOPC_NodeId_Clear(&nid_read);
+    SOPC_DataValue_Clear(dv_read);
+    SOPC_Free(dv_read);
+    return 0;
+}
+
+static int read_slope(double* slope)
+{
+    char nID_char_slope[20] = "ns=1;s=Slope";
+
+    SOPC_NodeId nid_read;
+    SOPC_ReturnStatus status =
+        SOPC_NodeId_InitializeFromCString(&nid_read, nID_char_slope, (int32_t) strlen(nID_char_slope));
+    SOPC_ASSERT(SOPC_STATUS_OK == status);
+    SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
+    if (NULL == dv_read)
+    {
+        PRINT("Failed to read node '%s'\n", nID_char_slope);
+        SOPC_NodeId_Clear(&nid_read);
+        return 1;
+    }
+
+    *slope = dv_read->Value.Value.Doublev;
+
+    SOPC_NodeId_Clear(&nid_read);
+    SOPC_DataValue_Clear(dv_read);
+    SOPC_Free(dv_read);
+    return 0;
+}
+
+static int write_underflow_warning(double tank_level)
+{
+    char nID_char_Tank_lim_lo[30] = "ns=1;s=LoLimitTankLevel";
+    char nID_char_Tank_below[30] = "ns=1;s=LevelUnderLow";
+
+    SOPC_NodeId nid_read;
+    SOPC_ReturnStatus status =
+        SOPC_NodeId_InitializeFromCString(&nid_read, nID_char_Tank_lim_lo, (int32_t) strlen(nID_char_Tank_lim_lo));
+    SOPC_ASSERT(SOPC_STATUS_OK == status);
+    SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
+    if (NULL == dv_read)
+    {
+        PRINT("Failed to read node '%s'\n", nID_char_Tank_lim_lo);
+        SOPC_NodeId_Clear(&nid_read);
+        return 1;
+    }
+
+    SOPC_NodeId nid_write;
+    status = SOPC_NodeId_InitializeFromCString(&nid_write, nID_char_Tank_below, (int32_t) strlen(nID_char_Tank_below));
+    SOPC_ASSERT(SOPC_STATUS_OK == status);
+    SOPC_DataValue dv_write;
+    SOPC_DataValue_Initialize(&dv_write);
+    dv_write.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+    dv_write.Value.DoNotClear = false;
+    dv_write.Value.BuiltInTypeId = SOPC_Boolean_Id;
+    dv_write.Value.Value.Boolean = tank_level < dv_read->Value.Value.Doublev;
+    Server_LocalWriteSingleNode(&nid_write, &dv_write);
+    SOPC_NodeId_Clear(&nid_write);
+    SOPC_DataValue_Clear(&dv_write);
+
+    SOPC_NodeId_Clear(&nid_read);
+    SOPC_DataValue_Clear(dv_read);
+    SOPC_Free(dv_read);
+    return 0;
+}
+
+static int update_publisher(void)
+{
+    char nID_char_PubSubStartStop[30] = "ns=1;s=PubSubStartStop";
+
+    SOPC_NodeId nid_read;
+    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid_read, nID_char_PubSubStartStop,
+                                                                 (int32_t) strlen(nID_char_PubSubStartStop));
+    SOPC_ASSERT(SOPC_STATUS_OK == status);
+    SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
+    if (NULL == dv_read)
+    {
+        PRINT("Failed to read node '%s'\n", nID_char_PubSubStartStop);
+        SOPC_NodeId_Clear(&nid_read);
+        return 1;
+    }
+
+    /* only execute on change! The functions start and stop threads...*/
+    if (value_PubSubStartStop != dv_read->Value.Value.Byte)
+    {
+        if (1 == dv_read->Value.Value.Byte)
+        {
+            // start publisher (will fail if already started)
+            bool bResult;
+            bResult = SOPC_PubScheduler_Start(pPubSubConfig, pSourceConfig, CONFIG_SOPC_PUBLISHER_PRIORITY);
+            if (!bResult)
+            {
+                PRINT("\r\nFailed to start Publisher!\r\n");
+                return 1;
+            }
+            else
+            {
+                gPubStarted = true;
+                PRINT("\r\nPublisher started\r\n");
+                return 0;
+            }
+        }
+        if (0 == dv_read->Value.Value.Byte)
+        {
+            SOPC_PubScheduler_Stop();
+            gPubStarted = false;
+            return 0;
+        }
+    }
+
+    value_PubSubStartStop = dv_read->Value.Value.Byte;
+
+    SOPC_NodeId_Clear(&nid_read);
+    SOPC_DataValue_Clear(dv_read);
+    SOPC_Free(dv_read);
+    return 0;
 }
 
 /*---------------------------------------------------------------------------
@@ -767,7 +1125,7 @@ static int cmd_demo_info(WordList* pList)
     PRINT("S2OPC PubSub+Server demo status\n");
     PRINT("Server endpoint       : %s\n", CONFIG_SOPC_ENDPOINT_ADDRESS);
     PRINT("Server running        : %s\n", YES_NO(gStopped == 0));
-    PRINT("Server const@space    : %s\n", YES_NO(sopc_embedded_is_const_addspace));
+    //PRINT("Server const@space    : %s\n", YES_NO(sopc_embedded_is_const_addspace));
     PRINT("Server toolkit version: %s\n", SOPC_TOOLKIT_VERSION);
     PRINT("Publisher address     : %s\n", CONFIG_SOPC_PUBLISHER_ADDRESS);
     PRINT("Publisher running     : %s\n", YES_NO(gPubStarted));

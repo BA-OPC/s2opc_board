@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "test_config.h": "c",
+        "static_security_data.h": "c",
+        "pubsub_config_static.h": "c",
+        "cache.h": "c",
+        "libs2opc_common_config.h": "c",
+        "libs2opc_request_builder.h": "c"
+    }
+}

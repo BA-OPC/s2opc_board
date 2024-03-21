@@ -989,11 +989,11 @@ MyObjects (Folder)
     <DisplayName>BASET1L_IF</DisplayName>
     <Description>The 10BASE-T1L interface of the Fluid Tank</Description>
     <References>
-      <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+      <Reference ReferenceType="HasTypeDefinition">i=58</Reference>
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=FluidTank</Reference>
-      <Reference ReferenceType="HasComponent">ns=1;s=IFAdminStatus</Reference>
-      <Reference ReferenceType="HasComponent">ns=1;s=IFOperStatus</Reference>
-      <Reference ReferenceType="HasComponent">ns=1;s=IFSpeed</Reference>
+      <Reference ReferenceType="Organizes">ns=1;s=IFAdminStatus</Reference>
+      <Reference ReferenceType="Organizes">ns=1;s=IFOperStatus</Reference>
+      <Reference ReferenceType="Organizes">ns=1;s=IFSpeed</Reference>
     </References>
   </UAObject>
   <UAVariable DataType="InterfaceAdminStatus" ParentNodeId="ns=1;s=BASET1L_IF" NodeId="ns=1;s=IFAdminStatus" BrowseName="1:IFAdminStatus">
@@ -1001,7 +1001,7 @@ MyObjects (Folder)
     <Description>Administrative Status of the Interface</Description>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
-      <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=BASET1L_IF</Reference>
+      <Reference ReferenceType="Organizes" IsForward="false">ns=1;s=BASET1L_IF</Reference>
     </References>
     <Value>
       <uax:Int32>0</uax:Int32>
@@ -1012,7 +1012,7 @@ MyObjects (Folder)
     <Description>Operational Status of the Interface</Description>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
-      <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=BASET1L_IF</Reference>
+      <Reference ReferenceType="Organizes" IsForward="false">ns=1;s=BASET1L_IF</Reference>
     </References>
     <Value>
       <uax:Int32>0</uax:Int32>
@@ -1024,7 +1024,7 @@ MyObjects (Folder)
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
       <Reference ReferenceType="HasProperty">ns=1;s=EUInterface_T1L</Reference>
-      <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=BASET1L_IF</Reference>
+      <Reference ReferenceType="Organizes" IsForward="false">ns=1;s=BASET1L_IF</Reference>
     </References>
     <Value>
       <uax:UInt64>10000000</uax:UInt64>
@@ -1097,12 +1097,12 @@ MyObjects (Folder)
         <uax:Body>
           <uax:EUInformation>
             <uax:NamespaceUri>http://www.opcfoundation.org/UA/units/un/cefact</uax:NamespaceUri>
-            <uax:UnitId>12890</uax:UnitId>
+            <uax:UnitId>5655636</uax:UnitId>
             <uax:DisplayName>
-              <uax:Text>mV</uax:Text>
+              <uax:Text>V</uax:Text>
             </uax:DisplayName>
             <uax:Description>
-              <uax:Text>millivolt</uax:Text>
+              <uax:Text>volt</uax:Text>
             </uax:Description>
           </uax:EUInformation>
         </uax:Body>
@@ -1124,20 +1124,20 @@ MyObjects (Folder)
         <uax:Body>
           <uax:Range>
             <uax:Low>0.0</uax:Low>
-            <uax:High>3300.0</uax:High>
+            <uax:High>3.3</uax:High>
           </uax:Range>
         </uax:Body>
       </uax:ExtensionObject>
     </Value>
   </UAVariable>
   <UAVariable DataType="Double" NodeId="ns=1;s=Slope" BrowseName="1:Slope" AccessLevel="3">
-    <DisplayName>Slope [N per mV]</DisplayName>
+    <DisplayName>Slope [N per V]</DisplayName>
     <References>
       <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
       <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=ForceSensor</Reference>
     </References>
     <Value>
-      <uax:Double>0.003</uax:Double>
+      <uax:Double>6.25</uax:Double>
     </Value>
   </UAVariable>
   <UAVariable DataType="Double" NodeId="ns=1;s=Force" BrowseName="1:Force">
@@ -1207,7 +1207,7 @@ MyObjects (Folder)
       <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=ForceSensor</Reference>
     </References>
     <Value>
-      <uax:String>Kistler Winti</uax:String>
+      <uax:String>Kistler Instrumente AG</uax:String>
     </Value>
   </UAVariable>
   <UAVariable DataType="String" ParentNodeId="ns=1;s=ForceSensor" NodeId="ns=1;s=ForceSensorModelName" BrowseName="1:ForceSensorModelName">
@@ -1218,7 +1218,7 @@ MyObjects (Folder)
       <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=ForceSensor</Reference>
     </References>
     <Value>
-      <uax:String>Sensational Sensor</uax:String>
+      <uax:String>9321C</uax:String>
     </Value>
   </UAVariable>
   <UAVariable DataType="String" ParentNodeId="ns=1;s=ForceSensor" NodeId="ns=1;s=ForceSensorSerialNumber" BrowseName="1:ForceSensorSerialNumber">
@@ -1229,7 +1229,7 @@ MyObjects (Folder)
       <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=ForceSensor</Reference>
     </References>
     <Value>
-      <uax:String>310523-060623</uax:String>
+      <uax:String>5658541</uax:String>
     </Value>
   </UAVariable>
   <!-- $!ostt20230531 TankLevel -->
@@ -1302,7 +1302,7 @@ MyObjects (Folder)
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=TankLevel</Reference>
     </References>
     <Value>
-      <uax:Double>2</uax:Double>
+      <uax:Double>0.8</uax:Double>
     </Value>
   </UAVariable>
   <UAVariable DataType="Double" NodeId="ns=1;s=LoLimitTankLevel" BrowseName="1:LoLimit" AccessLevel="3">
@@ -1406,7 +1406,7 @@ MyObjects (Folder)
       <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=TankWeight</Reference>
     </References>
     <Value>
-      <uax:Double>0.1</uax:Double>
+      <uax:Double>0.4</uax:Double>
     </Value>
   </UAVariable>
   <UAVariable DataType="EUInformation" ParentNodeId="ns=1;s=Tara" NodeId="ns=1;s=EUTara" BrowseName="1:EUTara" MinimumSamplingInterval="10000">
