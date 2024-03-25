@@ -725,7 +725,6 @@ void SOPC_Platform_Main(void)
     PRINT("Build date : " __DATE__ " " __TIME__ "\n");
 
     int i = 0;
-    int temp = 0;
     int32_t val_mv;
 
     double tank_level = 0;
@@ -815,11 +814,6 @@ void SOPC_Platform_Main(void)
         if (i == 20)
         {
             i = 0;
-            temp++;
-            if (temp == 10)
-            {
-                temp = 0;
-            }
 
             read_tara(&tara);
 
