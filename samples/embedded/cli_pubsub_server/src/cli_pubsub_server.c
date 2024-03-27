@@ -34,6 +34,8 @@
  *  - Notes: The content of the DSM CANNOT BE MODIFIED in this demo
  */
 // System includes
+#include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,8 +43,6 @@
 #include "libs2opc_common_config.h"
 #include "libs2opc_request_builder.h"
 #include "libs2opc_server.h"
-#include "libs2opc_server_config.h"
-#include "libs2opc_server_config_custom.h"
 
 // S2OPC includes
 #include "samples_platform_dep.h"
@@ -52,12 +52,8 @@
 #include "sopc_logger.h"
 #include "sopc_macros.h"
 #include "sopc_mem_alloc.h"
-#include "sopc_pki_stack.h"
 #include "sopc_pub_scheduler.h"
 #include "sopc_pubsub_local_sks.h"
-#include "sopc_sub_scheduler.h"
-#include "sopc_threads.h"
-#include "sopc_time.h"
 
 // project includes
 #include "cache.h"
@@ -84,45 +80,27 @@ static void log_UserCallback(const char* context, const char* text);
 #define ASYNCH_CONTEXT_CACHE_SYNC 0x12345679u
 #define APPLICATION_URI "urn:S2OPC:localhost"
 #define PRODUCT_URI "urn:S2OPC:localhost"
-#define SERVER_DESCRIPTION "S2OPC PubSub+Server demo Server"
+#define SERVER_DESCRIPTION "S2OPC Publisher demo"
 #define LOCALE_ID "en-US"
-static const char* g_userNamespaces[2] = {"urn:S2OPC:sopc_demo", NULL};
-static const char* g_localesArray[2] = {LOCALE_ID, NULL};
-
-// generated address space.
-// extern const bool sopc_embedded_is_const_addspace;
-// extern SOPC_AddressSpace_Node SOPC_Embedded_AddressSpace_Nodes[];
-// extern const uint32_t SOPC_Embedded_AddressSpace_nNodes;
-// extern const uint32_t SOPC_Embedded_VariableVariant_nb;
-// extern SOPC_Variant SOPC_Embedded_VariableVariant[];
 
 /***************************************************/
 /**               SERVER VARIABLES CONTENT         */
 /***************************************************/
 static int32_t gStopped = true;
-static Thread CLI_thread;
 
 static int32_t value_PubSubStartStop = 0;
 
-static SOPC_Endpoint_Config* g_epConfig = NULL;
-static SOPC_ReturnStatus authentication_check(SOPC_UserAuthentication_Manager* authn,
-                                              const SOPC_ExtensionObject* token,
-                                              SOPC_UserAuthentication_Status* authenticated);
-/** Configuration of callbacks for authentication */
-static const SOPC_UserAuthentication_Functions authentication_functions = {
-    .pFuncFree = (SOPC_UserAuthentication_Free_Func*) &SOPC_Free,
-    .pFuncValidateUserIdentity = &authentication_check};
-static void serverWriteEvent(const SOPC_CallContext* callCtxPtr,
-                             OpcUa_WriteValue* writeValue,
-                             SOPC_StatusCode writeStatus);
-static void localServiceAsyncRespCallback(SOPC_EncodeableType* encType, void* response, uintptr_t appContext);
 static bool Server_LocalWriteSingleNode(const SOPC_NodeId* pNid, SOPC_DataValue* pDv);
 static SOPC_DataValue* Server_LocalReadSingleNode(const SOPC_NodeId* pNid);
-static int write_tank_level(double tank_level);
+
+#define NID_MEASURED_FORCE "ns=1;s=Force"
+#define NID_TANK_LEVEL     "ns=1;s=TankLevel"
+#define NID_RAW_VOLTAGE     "ns=1;s=RawVoltage"
+static int write_double_value(double value, char* node_id);
+static int write_bool_value(bool value, char* node_id);
+
 static int write_underflow_warning(double tank_level);
 static int write_overflow_warning(double tank_level);
-static int write_measured_force(double measured_force);
-static int write_ADC(double raw_voltage);
 static int read_tara(double* tara);
 static int read_slope(double* slope);
 static int update_publisher(void);
@@ -131,11 +109,8 @@ static int update_publisher(void);
 /**               PUBSUB VARIABLES CONTENT         */
 /***************************************************/
 static SOPC_PubSubConfiguration* pPubSubConfig = NULL;
-static SOPC_SubTargetVariableConfig* pTargetConfig = NULL;
 static SOPC_PubSourceVariableConfig* pSourceConfig = NULL;
 static bool gPubStarted = false;
-static bool gSubStarted = false;
-static bool gSubOperational = false;
 // Date of last reception on Sub
 static SOPC_RealTime* gLastReceptionDateMs = NULL;
 
@@ -162,97 +137,13 @@ static SOPC_RealTime* gLastReceptionDateMs = NULL;
 static const struct adc_dt_spec adc_channels[] = {
     DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, DT_SPEC_AND_COMMA)};
 
-/***************************************************/
-/**          CLIENT LINE INTERFACE                 */
-/***************************************************/
-typedef char* WordList; // A simple C String
-static int cmd_demo_help(WordList* pList);
-static int cmd_demo_info(WordList* pList);
-static int cmd_demo_dbg(WordList* pList);
-static int cmd_demo_log(WordList* pList);
-static int cmd_demo_pub(WordList* pList);
-static int cmd_demo_sub(WordList* pList);
-static int cmd_demo_write(WordList* pList);
-static int cmd_demo_read(WordList* pList);
-static int cmd_demo_cache(WordList* pList);
-static int cmd_demo_quit(WordList* pList);
 
-/** Configuration of a command line */
-typedef struct
-{
-    const char* name;
-    int (*callback)(WordList* pList);
-    const char* description;
-} CLI_config_t;
-
-static const CLI_config_t CLI_config[] = {{"help", cmd_demo_help, "Display help"},
-                                          {"quit", cmd_demo_quit, "Quit demo"},
-                                          {"info", cmd_demo_info, "Show demo info"},
-                                          {"dbg", cmd_demo_dbg, "Show target debug info"},
-                                          {"log", cmd_demo_log, "Set log level"},
-                                          {"read", cmd_demo_read, "Print content of  <NodeId>"},
-                                          {"write", cmd_demo_write, "Write value to server"},
-                                          {"pub", cmd_demo_pub, "Manage Publisher"},
-                                          {"sub", cmd_demo_sub, "Manage Subscriber"},
-                                          {"cache", cmd_demo_cache, "Print content of cache"},
-                                          {NULL, NULL, NULL}};
-
-/**************************************************************************/
-static void serverStopped_cb(SOPC_ReturnStatus status)
-{
-    SOPC_UNUSED_ARG(status);
-
-    LOG_DEBUG("serverStopped_cb");
-    SOPC_Atomic_Int_Set(&gStopped, 1);
-    LOG_WARNING("Server stopped!\n");
-}
 
 /***************************************************/
 static void log_UserCallback(const char* context, const char* text)
 {
     SOPC_UNUSED_ARG(context);
     PRINT("%s\n", text);
-}
-
-/***************************************************/
-/* This function can be used to filter incoming connections based on user identification
- * This is an example to allow "user1/pass" authentication request
- **/
-static SOPC_ReturnStatus authentication_check(SOPC_UserAuthentication_Manager* authn,
-                                              const SOPC_ExtensionObject* token,
-                                              SOPC_UserAuthentication_Status* authenticated)
-{
-    SOPC_ASSERT(NULL != token && NULL != authenticated && NULL != authn);
-
-    *authenticated = SOPC_USER_AUTHENTICATION_REJECTED_TOKEN;
-    if (SOPC_ExtObjBodyEncoding_Object == token->Encoding &&
-        &OpcUa_UserNameIdentityToken_EncodeableType == token->Body.Object.ObjType)
-    {
-        OpcUa_UserNameIdentityToken* userToken = (OpcUa_UserNameIdentityToken*) (token->Body.Object.Value);
-
-        const char* username = SOPC_String_GetRawCString(&userToken->UserName);
-        SOPC_ByteString* pwd = &userToken->Password;
-
-        // This is an (unrealistic) example of user authentication check
-        if (strcmp(username, "user1") == 0)
-        {
-            if (pwd->Length == 4 && memcmp(pwd->Data, "pass", 4) == 0)
-            {
-                LOG_INFO("User <%s> has successfully authenticated", username);
-                *authenticated = SOPC_USER_AUTHENTICATION_OK;
-            }
-            else
-            {
-                LOG_WARNING("User <%s> entered an invalid password", username);
-            }
-        }
-        else
-        {
-            LOG_WARNING("Unknown user <%s>", username);
-        }
-    }
-
-    return SOPC_STATUS_OK;
 }
 
 /***************************************************/
@@ -272,61 +163,7 @@ static void cacheSync_WriteToCache(const SOPC_NodeId* pNid, const SOPC_DataValue
 }
 
 /***************************************************/
-/**
- * Callback for write-event on the server
- */
-static void serverWriteEvent(const SOPC_CallContext* callCtxPtr,
-                             OpcUa_WriteValue* writeValue,
-                             SOPC_StatusCode writeStatus)
-{
-    SOPC_ASSERT(NULL != callCtxPtr && NULL != writeValue);
 
-    // Here, specific actions can be performed when a client has successfully written
-    // into any variable of the server
-    if (SOPC_STATUS_OK == writeStatus)
-    {
-        char* nodeId = SOPC_NodeId_ToCString(&writeValue->NodeId);
-        LOG_INFO("A client updated the content of node <%s> with a value of type %d", nodeId,
-                 writeValue->Value.Value.BuiltInTypeId);
-        SOPC_Free(nodeId);
-        // Synchronize cache for PubSub
-        cacheSync_WriteToCache(&writeValue->NodeId, &writeValue->Value);
-    }
-    else
-    {
-        LOG_WARNING("Client write failed on server. returned code 0x%08X", writeStatus);
-    }
-}
-
-/***************************************************/
-/***
- * Callback for server local asynch events
- * @param encType The type of result:
- *        - &OpcUa_ReadResponse_EncodeableType for OpcUa_ReadResponse
- *        - &OpcUa_WriteResponse_EncodeableType for OpcUa_WriteResponse
- *        - ...
- * @param response The result of operation. Must be casted to a \a OpcUa_XxxResponse depending on \a encType The
- * @param appContext The user context, as provided in previous call to \a SOPC_ServerHelper_LocalServiceAsync
- */
-static void localServiceAsyncRespCallback(SOPC_EncodeableType* encType, void* response, uintptr_t appContext)
-{
-    if (encType == &OpcUa_WriteResponse_EncodeableType)
-    {
-        // This check ensures we receive a OpcUa_WriteResponse
-        SOPC_ASSERT(appContext == ASYNCH_CONTEXT_PARAM || appContext == ASYNCH_CONTEXT_CACHE_SYNC);
-
-        OpcUa_WriteResponse* writeResp = (OpcUa_WriteResponse*) response;
-        // Example: only check that the result is OK
-        for (int32_t i = 0; i < writeResp->NoOfResults; i++)
-        {
-            const SOPC_StatusCode status = writeResp->Results[i];
-            if (status != 0)
-            {
-                LOG_WARNING("Internal data update[%d/%d] failed with code 0x%08X", i, writeResp->NoOfResults, status);
-            }
-        }
-    }
-}
 
 /***************************************************/
 /***
@@ -387,6 +224,13 @@ static SOPC_DataValue* Server_LocalReadSingleNode(const SOPC_NodeId* pNid)
         SOPC_Free(request);
         return NULL;
     }
+    // TODO: this obviously doesn't work, as there is no server running
+    //       maybe connect to a different server, which is running the config,
+    //       or pull in a minimal server config
+    //       or use the "cache" to store the required node ids (initialization tbd.)
+    //
+    // status = SOPC_ClientCommon_Connect(const SOPC_LibSub_ConfigurationId cfgId, SOPC_LibSub_ConnectionId* pCliId);
+
     status = SOPC_ServerHelper_LocalServiceSync(request, (void**) &response);
     if (status != SOPC_STATUS_OK)
     {
@@ -409,207 +253,12 @@ static SOPC_DataValue* Server_LocalReadSingleNode(const SOPC_NodeId* pNid)
     return result;
 }
 
-/***************************************************/
-static void forEach_CacheInit(const SOPC_NodeId* nid, SOPC_DataValue* dv)
-{
-    SOPC_DataValue* asDv = Server_LocalReadSingleNode(nid);
-    SOPC_DataValue_Copy(dv, asDv);
-    SOPC_DataValue_Clear(asDv);
-    SOPC_Free(asDv);
-}
-
-/***************************************************/
-static void initializeCacheFromAddrSpace(void)
-{
-    Cache_ForEach_Exec exec = {.pExec = &forEach_CacheInit};
-    Cache_Lock();
-    Cache_ForEach(&exec);
-    Cache_Unlock();
-}
-
-/***
- * @brief Creates and setup the OPCUA server, using KConfig parameters
- */
-static void setupServer(void)
-{
-    SOPC_ReturnStatus status;
-
-    status = SOPC_HelperConfigServer_Initialize();
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_HelperConfigServer_Initialize failed");
-
-    log_UserCallback(NULL, "S2OPC initialization OK");
-
-    //////////////////////////////////
-    // Namespaces initialization
-    status = SOPC_HelperConfigServer_SetNamespaces(1, g_userNamespaces);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_HelperConfigServer_SetNamespaces failed");
-
-    status = SOPC_HelperConfigServer_SetLocaleIds(1, g_localesArray);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_HelperConfigServer_SetLocaleIds failed");
-
-    //////////////////////////////////
-    // Global descriptions initialization
-    status = SOPC_HelperConfigServer_SetApplicationDescription(APPLICATION_URI, PRODUCT_URI, SERVER_DESCRIPTION,
-                                                               LOCALE_ID, OpcUa_ApplicationType_Server);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_HelperConfigServer_SetApplicationDescription failed");
-
-    //////////////////////////////////
-    // Create endpoints configuration
-    SOPC_SecurityPolicy* sp;
-
-    PRINT("Create endpoint '%s'\n", CONFIG_SOPC_ENDPOINT_ADDRESS);
-    g_epConfig = SOPC_HelperConfigServer_CreateEndpoint(CONFIG_SOPC_ENDPOINT_ADDRESS, true);
-    SOPC_ASSERT(NULL != g_epConfig && "SOPC_HelperConfigServer_CreateEndpoint failed");
-
-    log_UserCallback(NULL, "Setting up security...");
-
-    /* 1st Security policy is None without user (users on unsecure channel shall be forbidden) */
-    sp = SOPC_EndpointConfig_AddSecurityConfig(g_epConfig, SOPC_SecurityPolicy_None);
-    SOPC_ASSERT(NULL != sp && "SOPC_EndpointConfig_AddSecurityConfig #1 failed");
-
-    status = SOPC_SecurityConfig_SetSecurityModes(sp, SOPC_SECURITY_MODE_NONE_MASK);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_SecurityConfig_SetSecurityModes #1 failed");
-
-    status = SOPC_SecurityConfig_AddUserTokenPolicy(sp, &SOPC_UserTokenPolicy_Anonymous);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_SecurityConfig_AddUserTokenPolicy #1/#1 failed");
-
-    /* 2nd Security policy is Basic256 with anonymous or username authentication allowed
-     * (without password encryption) */
-    sp = SOPC_EndpointConfig_AddSecurityConfig(g_epConfig, SOPC_SecurityPolicy_Basic256);
-    SOPC_ASSERT(NULL != sp && "SOPC_EndpointConfig_AddSecurityConfig #2 failed");
-
-    status =
-        SOPC_SecurityConfig_SetSecurityModes(sp, SOPC_SECURITY_MODE_SIGN_MASK | SOPC_SECURITY_MODE_SIGNANDENCRYPT_MASK);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_SecurityConfig_SetSecurityModes #2 failed");
-
-    status = SOPC_SecurityConfig_AddUserTokenPolicy(sp, &SOPC_UserTokenPolicy_Anonymous);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_SecurityConfig_AddUserTokenPolicy #2/#1 failed");
-    status = SOPC_SecurityConfig_AddUserTokenPolicy(sp, &SOPC_UserTokenPolicy_UserName_Basic256Sha256SecurityPolicy);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_SecurityConfig_AddUserTokenPolicy #2/#2 failed");
-
-    /* 3rd Security policy is Basic256Sha256 with anonymous or username authentication allowed
-     * (without password encryption) */
-    sp = SOPC_EndpointConfig_AddSecurityConfig(g_epConfig, SOPC_SecurityPolicy_Basic256Sha256);
-    SOPC_ASSERT(NULL != sp && "SOPC_EndpointConfig_AddSecurityConfig #3 failed");
-
-    status = SOPC_SecurityConfig_SetSecurityModes(sp, SOPC_SECURITY_MODE_SIGNANDENCRYPT_MASK);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_SecurityConfig_SetSecurityModes #3 failed");
-
-    status = SOPC_SecurityConfig_AddUserTokenPolicy(sp, &SOPC_UserTokenPolicy_Anonymous);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_SecurityConfig_AddUserTokenPolicy #3/#1 failed");
-    status = SOPC_SecurityConfig_AddUserTokenPolicy(sp, &SOPC_UserTokenPolicy_UserName_Basic256Sha256SecurityPolicy);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_SecurityConfig_AddUserTokenPolicy #3/#2 failed");
-
-    //////////////////////////////////
-    // Server certificates configuration
-    SOPC_SerializedCertificate* serializedCAcert = NULL;
-    SOPC_CRLList* serializedCAcrl = NULL;
-    SOPC_PKIProvider* pkiProvider = NULL;
-    status = SOPC_HelperConfigServer_SetKeyCertPairFromBytes(sizeof(server_2k_cert), server_2k_cert,
-                                                             sizeof(server_2k_key), server_2k_key);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_HelperConfigServer_SetKeyCertPairFromBytes() failed");
-
-    status = SOPC_KeyManager_SerializedCertificate_CreateFromDER(cacert, sizeof(cacert), &serializedCAcert);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_KeyManager_SerializedCertificate_CreateFromDER() failed");
-    status = SOPC_KeyManager_CRL_CreateOrAddFromDER(cacrl, sizeof(cacrl), &serializedCAcrl);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_KeyManager_CRL_CreateOrAddFromDER() failed");
-
-    status = SOPC_PKIProviderStack_Create(serializedCAcert, serializedCAcrl, &pkiProvider);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_PKIProviderStack_Create() failed");
-    SOPC_KeyManager_SerializedCertificate_Delete(serializedCAcert);
-
-    status = SOPC_HelperConfigServer_SetPKIprovider(pkiProvider);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_HelperConfigServer_SetPKIprovider failed");
-
-    log_UserCallback(NULL, "Test_Server_Client: Certificates and key loaded");
-
-    //////////////////////////////////
-    // Setup AddressSpace
-    // (void) sopc_embedded_is_const_addspace;
-    // SOPC_ASSERT(sopc_embedded_is_const_addspace && "Address space must be constant.");
-    // LOG_INFO("# Loading AddressSpace (%u nodes)...\n", SOPC_Embedded_AddressSpace_nNodes);
-    // SOPC_AddressSpace* addSpace =
-    //     SOPC_AddressSpace_CreateReadOnlyNodes(SOPC_Embedded_AddressSpace_nNodes, SOPC_Embedded_AddressSpace_Nodes,
-    //                                           SOPC_Embedded_VariableVariant_nb, SOPC_Embedded_VariableVariant);
-    // SOPC_ASSERT(NULL != addSpace && "SOPC_AddressSpace_Create failed");
-    //LOG_INFO("# Address space loaded\n");
-
-    //status = SOPC_HelperConfigServer_SetAddressSpace(addSpace);
-    //SOPC_ASSERT(NULL != addSpace && "SOPC_HelperConfigServer_SetAddressSpace failed");
-
-    SOPC_UserAuthorization_Manager* authorizationManager = SOPC_UserAuthorization_CreateManager_AllowAll();
-    SOPC_ASSERT(NULL != authorizationManager && "Failed to allocate SOPC_UserAuthentication_Manager");
-
-    //////////////////////////////////
-    // User Management configuration
-    SOPC_UserAuthentication_Manager* authenticationManager =
-        (SOPC_UserAuthentication_Manager*) SOPC_Malloc(sizeof(SOPC_UserAuthentication_Manager));
-    SOPC_ASSERT(NULL != authenticationManager && "Failed to allocate SOPC_UserAuthentication_Manager");
-
-    memset(authenticationManager, 0, sizeof(*authenticationManager));
-
-    // It is possible to store any user value in pData, which can provide some context while in
-    // callback event (see function authentication_check)
-    authenticationManager->pData = (void*) NULL;
-
-    authenticationManager->pFunctions = &authentication_functions;
-    SOPC_HelperConfigServer_SetUserAuthenticationManager(authenticationManager);
-    SOPC_HelperConfigServer_SetUserAuthorizationManager(authorizationManager);
-
-    status = SOPC_HelperConfigServer_SetWriteNotifCallback(&serverWriteEvent);
-    SOPC_ASSERT(NULL != authenticationManager && "SOPC_HelperConfigServer_SetWriteNotifCallback failed");
-
-    //////////////////////////////////
-    // Set the asynchronous event callback
-    status = SOPC_HelperConfigServer_SetLocalServiceAsyncResponse(localServiceAsyncRespCallback);
-    SOPC_ASSERT(NULL != authenticationManager && "SOPC_HelperConfigServer_SetLocalServiceAsyncResponse failed");
-
-    SOPC_HelperConfigServer_SetShutdownCountdown(1);
-}
-
-/***************************************************/
-static void clearServer(void)
-{
-    LOG_DEBUG("SOPC_HelperConfigServer_Clear");
-    SOPC_HelperConfigServer_Clear();
-}
 
 /***************************************************/
 static void clearPubSub(void)
 {
-    SOPC_SubScheduler_Stop();
-    gSubStarted = false;
     SOPC_PubScheduler_Stop();
-    gSubStarted = false;
-
     Cache_Clear();
-}
-
-/***************************************************/
-static bool Server_SetTargetVariables(OpcUa_WriteValue* lwv, int32_t nbValues)
-{
-    if (SOPC_Atomic_Int_Get(&gStopped) != 0)
-    {
-        return true;
-    }
-
-    SOPC_RealTime_GetTime(gLastReceptionDateMs);
-
-    /* Encapsulate the WriteValues in a WriteRequest and send it as a local service,
-     * acknowledge before the toolkit answers */
-    OpcUa_WriteRequest* request = NULL;
-    SOPC_ReturnStatus status = SOPC_Encodeable_Create(&OpcUa_WriteRequest_EncodeableType, (void**) &request);
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
-    if (NULL == request)
-    {
-        return false;
-    }
-
-    request->NoOfNodesToWrite = nbValues;
-    request->NodesToWrite = lwv;
-    SOPC_ServerHelper_LocalServiceAsync(request, ASYNCH_CONTEXT_CACHE_SYNC);
-
-    return true;
 }
 
 /*****************************************************
@@ -620,10 +269,6 @@ static void setupPubSub(void)
     // CONFIGURE PUBSUB
     pPubSubConfig = SOPC_PubSubConfig_GetStatic();
     SOPC_ASSERT(NULL != pPubSubConfig && "SOPC_PubSubConfig_GetStatic failed");
-
-    /* Sub target configuration */
-    pTargetConfig = SOPC_SubTargetVariableConfig_Create(&Server_SetTargetVariables);
-    SOPC_ASSERT(NULL != pTargetConfig && "SOPC_SubTargetVariableConfig_Create failed");
 
     /* Pub target configuration */
     pSourceConfig = SOPC_PubSourceVariableConfig_Create(&Cache_GetSourceVariables);
@@ -636,87 +281,6 @@ static void setupPubSub(void)
     Cache_Initialize(pPubSubConfig);
 }
 
-/***************************************************/
-/* This function receives a pointer to a C string.
- * It returns the string pointed to by pList and replaces the
- * next space by a NULL char so that the return value is now a C String
- * containing the first word of the string.
- * pList is modified to point to the next char after the insterted NULL.
- * In case pList reaches the initial NULL char, it is no more modified and
- * an empty string is returned.
- */
-static const char* CLI_GetNextWord(WordList* pList)
-{
-    if (NULL == pList)
-    {
-        return "";
-    }
-
-    const char* result = *pList;
-
-    while (**pList != '\0')
-    {
-        (*pList)++;
-        if (**pList == ' ')
-        {
-            **pList = 0; // Insert an NULL char to terminate string here
-            (*pList)++;
-            // next string starts after the first non space char
-            while (**pList == ' ')
-            {
-                (*pList)++;
-            }
-            break;
-        }
-    }
-    return result;
-}
-
-/***************************************************/
-static void* CLI_thread_exec(void* arg)
-{
-    SOPC_UNUSED_ARG(arg);
-    PRINT("Command-Line interface ready\n");
-
-    while (SOPC_Atomic_Int_Get(&gStopped) == 0)
-    {
-        char* line = SOPC_Shell_ReadLine();
-        char* wordList = line;
-
-        bool found = false;
-        const char* word = CLI_GetNextWord(&wordList);
-        if (word != NULL && word[0] != 0)
-        {
-            for (const CLI_config_t* pConfig = &CLI_config[0];
-                 pConfig->name != NULL && pConfig->description != NULL && !found; pConfig++)
-            {
-                if (0 == strcmp(word, pConfig->name))
-                {
-                    pConfig->callback(&wordList);
-                    found = true;
-                }
-            }
-
-            if (!found)
-            {
-                PRINT("Unknown command <%s>\n", word);
-                cmd_demo_help(NULL);
-            }
-        }
-        SOPC_Free(line);
-    }
-
-    PRINT("Command-Line interface Terminated\n");
-    return NULL;
-}
-
-void _le_mock()
-{
-    setupServer();
-    SOPC_Atomic_Int_Set(&gStopped, 0);
-    SOPC_ReturnStatus status = SOPC_ServerHelper_StartServer(&serverStopped_cb);
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_ServerHelper_StartServer failed");
-}
 
 /***************************************************/
 void SOPC_Platform_Main(void)
@@ -724,7 +288,6 @@ void SOPC_Platform_Main(void)
     SOPC_ReturnStatus status;
     PRINT("Build date : " __DATE__ " " __TIME__ "\n");
 
-    int i = 0;
     int32_t val_mv;
 
     double tank_level = 0;
@@ -771,79 +334,64 @@ void SOPC_Platform_Main(void)
 
     gLastReceptionDateMs = SOPC_RealTime_Create(NULL);
 
-    //setupServer();
     setupPubSub();
 
     //////////////////////////////////
-    // Start the server
     SOPC_Atomic_Int_Set(&gStopped, 0);
-    // status = SOPC_ServerHelper_StartServer(&serverStopped_cb);
-    // SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_ServerHelper_StartServer failed");
 
     // Check for server status after some time. (Start is asynchronous)
     SOPC_Sleep(100);
-    SOPC_ASSERT(SOPC_Atomic_Int_Get(&gStopped) == 0 && "Server failed to start.");
-
-    // Setup default values of Cache using AddressSpace content
-    initializeCacheFromAddrSpace();
-
-    /* Create thread for Command Line Input management*/
-    status = SOPC_Thread_Create(&CLI_thread, &CLI_thread_exec, NULL, "CLI");
-    SOPC_ASSERT(status == SOPC_STATUS_OK && "SOPC_Thread_Create failed");
+    SOPC_ASSERT(SOPC_Atomic_Int_Get(&gStopped) == 0 && "Failed to start.");
 
     // start publisher
-    do {
-        bool bResult;
-        bResult = SOPC_PubScheduler_Start(pPubSubConfig, pSourceConfig, CONFIG_SOPC_PUBLISHER_PRIORITY);
-        if (!bResult) {
-            PRINT("\r\nFailed to start Publisher!\r\n");
+    bool bResult;
+    bResult = SOPC_PubScheduler_Start(pPubSubConfig, pSourceConfig, CONFIG_SOPC_PUBLISHER_PRIORITY);
+    if (!bResult) {
+        PRINT("\r\nFailed to start Publisher!\r\n");
 
-        } else {
-            gPubStarted = true;
-            PRINT("\r\nPublisher started\r\n");
-        }
-    } while (0);
+    } else {
+        gPubStarted = true;
+        PRINT("\r\nPublisher started\r\n");
+    }
+
+    uint64_t mock_value = 0x1122334455667788;
 
     // Wait for termination
     while (SOPC_Atomic_Int_Get(&gStopped) == 0)
     {
-        // Process command line if any
-        SOPC_Sleep(50);
+        SOPC_Sleep(50 * 20);
 
-        i++;
-        if (i == 20)
-        {
-            i = 0;
+        read_tara(&tara);
 
-            read_tara(&tara);
+        /* Read the ADC, and convert it into liters*/
+        // printf("ADC reading:- %s, channel %d: ", adc_channels[0].dev->name, adc_channels[0].channel_id);
+        (void) adc_sequence_init_dt(&adc_channels[0], &sequence);
+        err = adc_read(adc_channels[0].dev, &sequence);
+        // printf("%" PRId16, buf);
+        val_mv = buf;
+        err = adc_raw_to_millivolts_dt(&adc_channels[0], &val_mv);
+        // printf(" = %" PRId32 " mV\n", val_mv);
+        adc = (double) val_mv / 1000;
+        write_double_value(adc, NID_RAW_VOLTAGE);
+        read_slope(&slope);
+        measured_force = (adc * slope); // 1.5kg => 15N => 2.4V  --> divide vy 0.16
+        write_double_value(measured_force, NID_MEASURED_FORCE);
+        tank_level = measured_force / 10 - tara;
 
-            /* Read the ADC, and convert it into liters*/
-            // printf("ADC reading:- %s, channel %d: ", adc_channels[0].dev->name, adc_channels[0].channel_id);
-            (void) adc_sequence_init_dt(&adc_channels[0], &sequence);
-            err = adc_read(adc_channels[0].dev, &sequence);
-            // printf("%" PRId16, buf);
-            val_mv = buf;
-            err = adc_raw_to_millivolts_dt(&adc_channels[0], &val_mv);
-            // printf(" = %" PRId32 " mV\n", val_mv);
-            adc = (double) val_mv / 1000;
-            write_ADC(adc);
-            read_slope(&slope);
-            measured_force = (adc * slope); // 1.5kg => 15N => 2.4V  --> divide vy 0.16
-            write_measured_force(measured_force);
-            tank_level = measured_force / 10 - tara;
+        uint64_t tmp = (mock_value&0xff) << 56;
+        mock_value = tmp | (mock_value >> 8);
+        tank_level = *((double*)(void*)&mock_value);
 
-            write_tank_level(tank_level);
-            write_overflow_warning(tank_level);
-            write_underflow_warning(tank_level);
+        write_double_value(tank_level, NID_TANK_LEVEL);
+        write_overflow_warning(tank_level);
+        write_underflow_warning(tank_level);
 
-            update_publisher();
-        }
+        update_publisher();
     }
 
     SOPC_Atomic_Int_Set(&gStopped, 1);
 
     clearPubSub();
-    clearServer();
 
     LOG_DEBUG("SOPC_CommonHelper_Clear");
     SOPC_CommonHelper_Clear();
@@ -856,12 +404,11 @@ void SOPC_Platform_Main(void)
 }
 
 /***************************************************/
-static int write_tank_level(double tank_level)
+static int write_double_value(double value, char* node_id)
 {
-    char nID_char_Tanklevel[20] = "ns=1;s=TankLevel";
     SOPC_NodeId nid;
     SOPC_ReturnStatus status =
-        SOPC_NodeId_InitializeFromCString(&nid, nID_char_Tanklevel, (int32_t) strlen(nID_char_Tanklevel));
+        SOPC_NodeId_InitializeFromCString(&nid, node_id, (int32_t) strlen(node_id));
     SOPC_ASSERT(SOPC_STATUS_OK == status);
     SOPC_DataValue dv;
     SOPC_DataValue_Initialize(&dv);
@@ -869,7 +416,7 @@ static int write_tank_level(double tank_level)
     dv.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
     dv.Value.DoNotClear = false;
     dv.Value.BuiltInTypeId = SOPC_Double_Id;
-    dv.Value.Value.Doublev = tank_level;
+    dv.Value.Value.Doublev = value;
 
     Server_LocalWriteSingleNode(&nid, &dv);
 
@@ -878,180 +425,107 @@ static int write_tank_level(double tank_level)
     return 0;
 }
 
-static int write_measured_force(double measured_force)
+static int write_bool_value(bool value, char* node_id)
 {
-    char nID_char_MeasuredForce[20] = "ns=1;s=Force";
-    SOPC_NodeId nid;
-    SOPC_ReturnStatus status =
-        SOPC_NodeId_InitializeFromCString(&nid, nID_char_MeasuredForce, (int32_t) strlen(nID_char_MeasuredForce));
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
-    SOPC_DataValue dv;
-    SOPC_DataValue_Initialize(&dv);
-
-    dv.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
-    dv.Value.DoNotClear = false;
-    dv.Value.BuiltInTypeId = SOPC_Double_Id;
-    dv.Value.Value.Doublev = measured_force;
-
-    Server_LocalWriteSingleNode(&nid, &dv);
-
-    SOPC_NodeId_Clear(&nid);
-    SOPC_DataValue_Clear(&dv);
-    return 0;
-}
-static int write_ADC(double raw_voltage)
-{
-    char nID_char_RawVoltage[20] = "ns=1;s=RawVoltage";
-    SOPC_NodeId nid;
-    SOPC_ReturnStatus status =
-        SOPC_NodeId_InitializeFromCString(&nid, nID_char_RawVoltage, (int32_t) strlen(nID_char_RawVoltage));
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
-    SOPC_DataValue dv;
-    SOPC_DataValue_Initialize(&dv);
-
-    dv.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
-    dv.Value.DoNotClear = false;
-    dv.Value.BuiltInTypeId = SOPC_Double_Id;
-    dv.Value.Value.Doublev = raw_voltage;
-
-    Server_LocalWriteSingleNode(&nid, &dv);
-
-    SOPC_NodeId_Clear(&nid);
-    SOPC_DataValue_Clear(&dv);
-    return 0;
-}
-
-static int write_overflow_warning(double tank_level)
-{
-    char nID_char_Tank_lim_hi[30] = "ns=1;s=HiLimitTankLevel";
-    char nID_char_Tank_above[30] = "ns=1;s=LevelAboveHigh";
-
-    SOPC_NodeId nid_read;
-    SOPC_ReturnStatus status =
-        SOPC_NodeId_InitializeFromCString(&nid_read, nID_char_Tank_lim_hi, (int32_t) strlen(nID_char_Tank_lim_hi));
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
-    SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
-    if (NULL == dv_read)
-    {
-        PRINT("Failed to read node '%s'\n", nID_char_Tank_lim_hi);
-        SOPC_NodeId_Clear(&nid_read);
-        return 1;
-    }
-
     SOPC_NodeId nid_write;
-    status = SOPC_NodeId_InitializeFromCString(&nid_write, nID_char_Tank_above, (int32_t) strlen(nID_char_Tank_above));
+    SOPC_ReturnStatus status = 
+        SOPC_NodeId_InitializeFromCString(&nid_write, node_id, (int32_t) strlen(node_id));
     SOPC_ASSERT(SOPC_STATUS_OK == status);
     SOPC_DataValue dv_write;
     SOPC_DataValue_Initialize(&dv_write);
+
     dv_write.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
     dv_write.Value.DoNotClear = false;
     dv_write.Value.BuiltInTypeId = SOPC_Boolean_Id;
-    dv_write.Value.Value.Boolean = tank_level > dv_read->Value.Value.Doublev;
+    dv_write.Value.Value.Boolean = value;
+
     Server_LocalWriteSingleNode(&nid_write, &dv_write);
     SOPC_NodeId_Clear(&nid_write);
     SOPC_DataValue_Clear(&dv_write);
 
-    SOPC_NodeId_Clear(&nid_read);
-    SOPC_DataValue_Clear(dv_read);
-    SOPC_Free(dv_read);
     return 0;
 }
 
-static int read_tara(double* tara)
+static double read_double_value(char* node_id)
 {
-    char nID_char_tara[20] = "ns=1;s=Tara";
-
     SOPC_NodeId nid_read;
     SOPC_ReturnStatus status =
-        SOPC_NodeId_InitializeFromCString(&nid_read, nID_char_tara, (int32_t) strlen(nID_char_tara));
+        SOPC_NodeId_InitializeFromCString(&nid_read, node_id, (int32_t) strlen(node_id));
     SOPC_ASSERT(SOPC_STATUS_OK == status);
     SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
-    if (NULL == dv_read)
-    {
-        PRINT("Failed to read node '%s'\n", nID_char_tara);
+
+    if (NULL == dv_read) {
+        PRINT("Failed to read node '%s'\n", node_id);
         SOPC_NodeId_Clear(&nid_read);
-        return 1;
+        return FP_NAN;
     }
 
-    *tara = dv_read->Value.Value.Doublev;
+    double result = dv_read->Value.Value.Doublev;
 
     SOPC_NodeId_Clear(&nid_read);
     SOPC_DataValue_Clear(dv_read);
     SOPC_Free(dv_read);
-    return 0;
+
+    return result;
 }
 
-static int read_slope(double* slope)
+static int write_overflow_warning(double tank_level)
 {
-    char nID_char_slope[20] = "ns=1;s=Slope";
-
-    SOPC_NodeId nid_read;
-    SOPC_ReturnStatus status =
-        SOPC_NodeId_InitializeFromCString(&nid_read, nID_char_slope, (int32_t) strlen(nID_char_slope));
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
-    SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
-    if (NULL == dv_read)
-    {
-        PRINT("Failed to read node '%s'\n", nID_char_slope);
-        SOPC_NodeId_Clear(&nid_read);
+    double limit = read_double_value("ns=1;s=HiLimitTankLevel");
+    if (limit == FP_NAN) {
         return 1;
     }
 
-    *slope = dv_read->Value.Value.Doublev;
+    write_bool_value(tank_level > limit, "ns=1;s=LevelAboveHigh");
 
-    SOPC_NodeId_Clear(&nid_read);
-    SOPC_DataValue_Clear(dv_read);
-    SOPC_Free(dv_read);
     return 0;
 }
 
 static int write_underflow_warning(double tank_level)
 {
-    char nID_char_Tank_lim_lo[30] = "ns=1;s=LoLimitTankLevel";
-    char nID_char_Tank_below[30] = "ns=1;s=LevelUnderLow";
-
-    SOPC_NodeId nid_read;
-    SOPC_ReturnStatus status =
-        SOPC_NodeId_InitializeFromCString(&nid_read, nID_char_Tank_lim_lo, (int32_t) strlen(nID_char_Tank_lim_lo));
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
-    SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
-    if (NULL == dv_read)
-    {
-        PRINT("Failed to read node '%s'\n", nID_char_Tank_lim_lo);
-        SOPC_NodeId_Clear(&nid_read);
+    double limit = read_double_value( "ns=1;s=LoLimitTankLevel");
+    if (limit == FP_NAN) {
         return 1;
     }
 
-    SOPC_NodeId nid_write;
-    status = SOPC_NodeId_InitializeFromCString(&nid_write, nID_char_Tank_below, (int32_t) strlen(nID_char_Tank_below));
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
-    SOPC_DataValue dv_write;
-    SOPC_DataValue_Initialize(&dv_write);
-    dv_write.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
-    dv_write.Value.DoNotClear = false;
-    dv_write.Value.BuiltInTypeId = SOPC_Boolean_Id;
-    dv_write.Value.Value.Boolean = tank_level < dv_read->Value.Value.Doublev;
-    Server_LocalWriteSingleNode(&nid_write, &dv_write);
-    SOPC_NodeId_Clear(&nid_write);
-    SOPC_DataValue_Clear(&dv_write);
+    write_bool_value(tank_level < limit, "ns=1;s=LevelUnderLow");
 
-    SOPC_NodeId_Clear(&nid_read);
-    SOPC_DataValue_Clear(dv_read);
-    SOPC_Free(dv_read);
     return 0;
 }
 
+static int read_tara(double* tara)
+{
+    double val = read_double_value("ns=1;s=Tara");
+    if (val == FP_NAN) {
+        return 1;
+    }
+    *tara = val;
+
+    return 0;
+}
+
+static int read_slope(double* slope)
+{
+    double val = read_double_value("ns=1;s=Slope");
+    if (val == FP_NAN) {
+        return 1;
+    }
+    *slope = val;
+
+    return 0;
+}
+
+
 static int update_publisher(void)
 {
-    char nID_char_PubSubStartStop[30] = "ns=1;s=PubSubStartStop";
+    char nID_char_PubSubStartStop[23] = "ns=1;s=PubSubStartStop";
 
     SOPC_NodeId nid_read;
     SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid_read, nID_char_PubSubStartStop,
                                                                  (int32_t) strlen(nID_char_PubSubStartStop));
     SOPC_ASSERT(SOPC_STATUS_OK == status);
     SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
-    if (NULL == dv_read)
-    {
+    if (NULL == dv_read) {
         PRINT("Failed to read node '%s'\n", nID_char_PubSubStartStop);
         SOPC_NodeId_Clear(&nid_read);
         return 1;
@@ -1093,269 +567,3 @@ static int update_publisher(void)
     return 0;
 }
 
-/*---------------------------------------------------------------------------
- *                            CLI implementation
- *---------------------------------------------------------------------------*/
-/***************************************************/
-static int cmd_demo_help(WordList* pList)
-{
-    SOPC_UNUSED_ARG(pList);
-
-    PRINT("S2OPC PubSub+Server demo commands:\n");
-
-    for (const CLI_config_t* pConfig = &CLI_config[0]; pConfig->name != NULL && pConfig->description != NULL; pConfig++)
-    {
-        PRINT("  %-16s : %s\n", pConfig->name, pConfig->description);
-    }
-
-    return 0;
-}
-
-/***************************************************/
-static int cmd_demo_info(WordList* pList)
-{
-    SOPC_UNUSED_ARG(pList);
-
-    PRINT("S2OPC PubSub+Server demo status\n");
-    PRINT("Server endpoint       : %s\n", CONFIG_SOPC_ENDPOINT_ADDRESS);
-    PRINT("Server running        : %s\n", YES_NO(gStopped == 0));
-    //PRINT("Server const@space    : %s\n", YES_NO(sopc_embedded_is_const_addspace));
-    PRINT("Server toolkit version: %s\n", SOPC_TOOLKIT_VERSION);
-    PRINT("Publisher address     : %s\n", CONFIG_SOPC_PUBLISHER_ADDRESS);
-    PRINT("Publisher running     : %s\n", YES_NO(gPubStarted));
-    PRINT("Publisher period      : %d ms\n", CONFIG_SOPC_PUBLISHER_PERIOD_US / 1000);
-    PRINT("Subscriber address    : %s\n", CONFIG_SOPC_SUBSCRIBER_ADDRESS);
-    PRINT("Subscriber running    : %s\n", YES_NO(gSubStarted));
-    if (gSubOperational)
-    {
-        int delta_ms = (int) (SOPC_RealTime_DeltaUs(gLastReceptionDateMs, NULL) / 1000);
-        PRINT("Subscriber last rcpt  : %d ms\n", delta_ms);
-    }
-
-    PRINT("NET INTERFACE         : %s\n", SOPC_Platform_Get_Default_Net_Itf());
-
-    return 0;
-}
-
-/***************************************************/
-static int cmd_demo_dbg(WordList* pList)
-{
-    SOPC_UNUSED_ARG(pList);
-
-    PRINT("S2OPC PubSub+Server target debug informations:\n");
-    SOPC_Platform_Target_Debug();
-    return 0;
-}
-
-/***************************************************/
-static int cmd_demo_log(WordList* pList)
-{
-    const char* word = CLI_GetNextWord(pList);
-    switch (word[0])
-    {
-    case 'E':
-        SOPC_Logger_SetTraceLogLevel(SOPC_LOG_LEVEL_ERROR);
-        break;
-    case 'W':
-        SOPC_Logger_SetTraceLogLevel(SOPC_LOG_LEVEL_WARNING);
-        break;
-    case 'I':
-        SOPC_Logger_SetTraceLogLevel(SOPC_LOG_LEVEL_INFO);
-        break;
-    case 'D':
-        SOPC_Logger_SetTraceLogLevel(SOPC_LOG_LEVEL_DEBUG);
-        break;
-    default:
-        PRINT("usage: log <D|I|W|E>\n");
-        break;
-    }
-    return 0;
-}
-
-/***************************************************/
-static int cmd_demo_pub(WordList* pList)
-{
-    const char* word = CLI_GetNextWord(pList);
-
-    if (0 == strcmp(word, "start"))
-    {
-        // start publisher (will fail if already started)
-        bool bResult;
-        bResult = SOPC_PubScheduler_Start(pPubSubConfig, pSourceConfig, CONFIG_SOPC_PUBLISHER_PRIORITY);
-        if (!bResult)
-        {
-            PRINT("\r\nFailed to start Publisher!\r\n");
-            return 1;
-        }
-        else
-        {
-            gPubStarted = true;
-            PRINT("\r\nPublisher started\r\n");
-            return 0;
-        }
-    }
-    if (0 == strcmp(word, "stop"))
-    {
-        SOPC_PubScheduler_Stop();
-        gPubStarted = false;
-        return 0;
-    }
-    PRINT("usage: pub [start|stop] (found %s)\n", word);
-    return 0;
-}
-
-/***************************************************/
-static void cb_SetSubStatus(SOPC_PubSubState state)
-{
-    PRINT("New Sub state: %d\n", (int) state);
-    gSubOperational = (SOPC_PubSubState_Operational == state);
-}
-
-/***************************************************/
-static int cmd_demo_sub(WordList* pList)
-{
-    const char* word = CLI_GetNextWord(pList);
-
-    if (0 == strcmp(word, "start"))
-    {
-        // start subscriber (will fail if already started)
-        bool bResult;
-        bResult =
-            SOPC_SubScheduler_Start(pPubSubConfig, pTargetConfig, cb_SetSubStatus, CONFIG_SOPC_SUBSCRIBER_PRIORITY);
-        if (!bResult)
-        {
-            PRINT("\r\nFailed to start Subscriber!\r\n");
-            return 1;
-        }
-        else
-        {
-            gSubStarted = true;
-            PRINT("\r\nSubscriber started\r\n");
-            return 0;
-        }
-    }
-    if (0 == strcmp(word, "stop"))
-    {
-        SOPC_SubScheduler_Stop();
-        gSubStarted = false;
-        return 0;
-    }
-
-    PRINT("usage: sub [start|stop]\n");
-    return 0;
-}
-
-/***************************************************/
-static int cmd_demo_write(WordList* pList)
-{
-    const char* nodeIdC = CLI_GetNextWord(pList);
-    const char* dvC = CLI_GetNextWord(pList);
-    if (dvC[0] == 0)
-    {
-        PRINT("usage: demo write <nodeid> <value>\n");
-        PRINT("<value> must be prefixed by b for a BOOL, s for a String, B for a byte,\n");
-        PRINT("        i for a INT32, u for a UINT32\n");
-        PRINT("Other formats not implemented here.\n");
-        return 0;
-    }
-
-    SOPC_NodeId nid;
-    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid, nodeIdC, (int32_t) strlen(nodeIdC));
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
-    SOPC_DataValue dv;
-    SOPC_DataValue_Initialize(&dv);
-
-    dv.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
-    dv.Value.DoNotClear = false;
-    if (dvC[0] == 's')
-    {
-        dv.Value.BuiltInTypeId = SOPC_String_Id;
-        status = SOPC_String_InitializeFromCString(&dv.Value.Value.String, dvC + 1);
-        SOPC_ASSERT(SOPC_STATUS_OK == status);
-    }
-    else if (dvC[0] == 'b')
-    {
-        dv.Value.BuiltInTypeId = SOPC_Boolean_Id;
-
-        dv.Value.Value.Boolean = (bool) atoi(dvC + 1);
-    }
-    else if (dvC[0] == 'B')
-    {
-        dv.Value.BuiltInTypeId = SOPC_Byte_Id;
-
-        dv.Value.Value.Byte = (SOPC_Byte) atoi(dvC + 1);
-    }
-    else if (dvC[0] == 'i')
-    {
-        dv.Value.BuiltInTypeId = SOPC_Int32_Id;
-
-        dv.Value.Value.Int32 = (int32_t) atoi(dvC + 1);
-    }
-    else if (dvC[0] == 'u')
-    {
-        dv.Value.BuiltInTypeId = SOPC_UInt32_Id;
-
-        dv.Value.Value.Uint32 = (uint32_t) atoi(dvC + 1);
-    }
-    else
-    {
-        PRINT("Invalid format for <value>\n");
-        return 0;
-    }
-
-    Server_LocalWriteSingleNode(&nid, &dv);
-
-    SOPC_NodeId_Clear(&nid);
-    SOPC_DataValue_Clear(&dv);
-    return 0;
-}
-
-/***************************************************/
-static int cmd_demo_read(WordList* pList)
-{
-    const char* nodeIdC = CLI_GetNextWord(pList);
-    if (nodeIdC[0] == 0)
-    {
-        PRINT("usage: demo read <nodeid>\n");
-        return 0;
-    }
-
-    SOPC_NodeId nid;
-    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid, nodeIdC, (int32_t) strlen(nodeIdC));
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
-
-    SOPC_DataValue* dv = Server_LocalReadSingleNode(&nid);
-
-    if (NULL == dv)
-    {
-        PRINT("Failed to read node '%s'\n", nodeIdC);
-        SOPC_NodeId_Clear(&nid);
-        return 1;
-    }
-
-    Cache_Dump_VarValue(&nid, dv);
-
-    SOPC_NodeId_Clear(&nid);
-    SOPC_DataValue_Clear(dv);
-    SOPC_Free(dv);
-    return 0;
-}
-
-/***************************************************/
-static int cmd_demo_cache(WordList* pList)
-{
-    SOPC_UNUSED_ARG(pList);
-
-    Cache_Dump();
-    return 0;
-}
-
-/***************************************************/
-static int cmd_demo_quit(WordList* pList)
-{
-    SOPC_UNUSED_ARG(pList);
-    SOPC_ServerHelper_StopServer();
-    LOG_WARNING("Server manually stopped!\n");
-
-    return 0;
-}
