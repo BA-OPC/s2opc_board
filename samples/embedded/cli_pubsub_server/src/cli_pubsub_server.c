@@ -354,7 +354,7 @@ void SOPC_Platform_Main(void)
         PRINT("\r\nPublisher started\r\n");
     }
 
-    uint64_t mock_value = 0x1122334455667788;
+    // uint64_t mock_value = 0x1122334455667788;
 
     // Wait for termination
     while (SOPC_Atomic_Int_Get(&gStopped) == 0)
@@ -378,11 +378,12 @@ void SOPC_Platform_Main(void)
         write_double_value(measured_force, NID_MEASURED_FORCE);
         tank_level = measured_force / 10 - tara;
 
-        uint64_t tmp = (mock_value&0xff) << 56;
-        mock_value = tmp | (mock_value >> 8);
-        tank_level = *((double*)(void*)&mock_value);
+        // uint64_t tmp = (mock_value&0xff) << 56;
+        // mock_value = tmp | (mock_value >> 8);
+        // tank_level = *((double*)(void*)&mock_value);
 
-        write_double_value(tank_level, NID_TANK_LEVEL);
+        write_double_value(adc, NID_TANK_LEVEL);
+        //write_double_value(tank_level, NID_TANK_LEVEL);
         write_overflow_warning(tank_level);
         write_underflow_warning(tank_level);
 
