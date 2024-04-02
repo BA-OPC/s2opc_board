@@ -224,6 +224,9 @@ static SOPC_DataValue* Server_LocalReadSingleNode(const SOPC_NodeId* pNid)
         SOPC_Free(request);
         return NULL;
     }
+
+    
+    
     // TODO: this obviously doesn't work, as there is no server running
     //       maybe connect to a different server, which is running the config,
     //       or pull in a minimal server config
@@ -323,6 +326,7 @@ void SOPC_Platform_Main(void)
 
     /* Setup platform-dependant features (network, ...)*/
     SOPC_Platform_Setup();
+    
 
     /* Configure the server logger (user logger) */
     SOPC_Log_Configuration logConfig;
@@ -335,6 +339,27 @@ void SOPC_Platform_Main(void)
     gLastReceptionDateMs = SOPC_RealTime_Create(NULL);
 
     setupPubSub();
+    { 
+    SOPC_DataValue slope;
+    SOPC_DataValue_Initialize(&slope);
+    slope.Value.Value.Uint32 = 38;
+    slope.Value.BuiltInTypeId = SOPC_UInt32_Id;
+    slope.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+    SOPC_NodeId nid;
+        SOPC_NodeId_InitializeFromCString(&nid, "ns=1;s=Slope", 12);
+        Cache_Set(&nid, &slope);
+    }
+
+    { 
+    SOPC_DataValue tara;
+    SOPC_DataValue_Initialize(&tara);
+    tara.Value.Value.Uint32 = 55;
+    tara.Value.BuiltInTypeId = SOPC_UInt32_Id;
+    tara.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+    SOPC_NodeId nid;
+        SOPC_NodeId_InitializeFromCString(&nid, "ns=1;s=Tara", 11);
+        Cache_Set(&nid, &tara);
+    }
 
     //////////////////////////////////
     SOPC_Atomic_Int_Set(&gStopped, 0);
@@ -382,8 +407,8 @@ void SOPC_Platform_Main(void)
         // mock_value = tmp | (mock_value >> 8);
         // tank_level = *((double*)(void*)&mock_value);
 
-        write_double_value(adc, NID_TANK_LEVEL);
-        //write_double_value(tank_level, NID_TANK_LEVEL);
+        //write_double_value(adc, NID_TANK_LEVEL);
+        write_double_value(tank_level, NID_TANK_LEVEL);
         write_overflow_warning(tank_level);
         write_underflow_warning(tank_level);
 
@@ -447,33 +472,60 @@ static int write_bool_value(bool value, char* node_id)
     return 0;
 }
 
-static double read_double_value(char* node_id)
+static SOPC_ReturnStatus read_double_value(double* result, char* node_id)
 {
     SOPC_NodeId nid_read;
     SOPC_ReturnStatus status =
         SOPC_NodeId_InitializeFromCString(&nid_read, node_id, (int32_t) strlen(node_id));
     SOPC_ASSERT(SOPC_STATUS_OK == status);
-    SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
+    Cache_Lock();
+    SOPC_DataValue* dv_read = Cache_Get(&nid_read);
+    Cache_Unlock();
+    //Server_LocalReadSingleNode(&nid_read);
 
     if (NULL == dv_read) {
         PRINT("Failed to read node '%s'\n", node_id);
         SOPC_NodeId_Clear(&nid_read);
-        return FP_NAN;
+        return SOPC_STATUS_NOK;
     }
 
-    double result = dv_read->Value.Value.Doublev;
+    *result = dv_read->Value.Value.Doublev;
 
     SOPC_NodeId_Clear(&nid_read);
-    SOPC_DataValue_Clear(dv_read);
-    SOPC_Free(dv_read);
-
-    return result;
+    return SOPC_STATUS_OK;
 }
+
+SOPC_ReturnStatus read_uint32_value(uint32_t* result,char* node_id )
+{
+    SOPC_NodeId nid_read;
+    SOPC_ReturnStatus status =
+        SOPC_NodeId_InitializeFromCString(&nid_read, node_id, (int32_t) strlen(node_id));
+    SOPC_ASSERT(SOPC_STATUS_OK == status);
+    Cache_Lock();
+    SOPC_DataValue* dv_read = Cache_Get(&nid_read);
+    Cache_Unlock();
+    //Server_LocalReadSingleNode(&nid_read);
+
+    if (NULL == dv_read) {
+        PRINT("Failed to read node '%s'\n", node_id);
+        SOPC_NodeId_Clear(&nid_read);
+        return SOPC_STATUS_NOK;
+    }
+
+    *result = dv_read->Value.Value.Uint32;
+
+
+    SOPC_NodeId_Clear(&nid_read);
+    return SOPC_STATUS_OK;
+}
+
 
 static int write_overflow_warning(double tank_level)
 {
-    double limit = read_double_value("ns=1;s=HiLimitTankLevel");
-    if (limit == FP_NAN) {
+
+    double limit;
+    SOPC_ReturnStatus status = read_double_value(&limit, "ns=1;s=HiLimitTankLevel");
+    if (status == SOPC_STATUS_NOK) {
         return 1;
     }
 
@@ -484,8 +536,9 @@ static int write_overflow_warning(double tank_level)
 
 static int write_underflow_warning(double tank_level)
 {
-    double limit = read_double_value( "ns=1;s=LoLimitTankLevel");
-    if (limit == FP_NAN) {
+    double limit;
+    SOPC_ReturnStatus status = read_double_value( &limit,"ns=1;s=LoLimitTankLevel");
+    if (status == SOPC_STATUS_NOK) {
         return 1;
     }
 
@@ -496,23 +549,21 @@ static int write_underflow_warning(double tank_level)
 
 static int read_tara(double* tara)
 {
-    double val = read_double_value("ns=1;s=Tara");
-    if (val == FP_NAN) {
+    SOPC_ReturnStatus val = read_double_value(tara, "ns=1;s=Tara");
+    if (val == SOPC_STATUS_NOK) {
         return 1;
     }
-    *tara = val;
 
     return 0;
 }
 
 static int read_slope(double* slope)
 {
-    double val = read_double_value("ns=1;s=Slope");
-    if (val == FP_NAN) {
+    
+    SOPC_ReturnStatus val = read_double_value(slope, "ns=1;s=Slope");
+    if (val == SOPC_STATUS_NOK) {
         return 1;
     }
-    *slope = val;
-
     return 0;
 }
 
