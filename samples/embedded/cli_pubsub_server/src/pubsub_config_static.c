@@ -20,6 +20,7 @@
 #include "pubsub_config_static.h"
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "sopc_assert.h"
@@ -38,7 +39,9 @@
 #define PUB_VAR_INT16 "ns=1;s=PubInt16"
 #define PUB_VAR_BOOL "ns=1;s=PubBool"
 #define PUB_VAR_STATUS "ns=1;s=PubStatusCode"
-#define NB_PUB_VARS 6
+
+#define PUB_VAR_BATCH "ns=2;i=6067"
+#define NB_PUB_VARS 1
 
 #define SUB_VAR_STRING "ns=1;s=SubString"
 #define SUB_VAR_BYTE "ns=1;s=SubByte"
@@ -87,12 +90,14 @@ static SOPC_PublishedDataSet* SOPC_PubSubConfig_InitDataSet(SOPC_PubSubConfigura
 
 static void SOPC_PubSubConfig_SetPubVariableAt(SOPC_PublishedDataSet* dataset,
                                                uint16_t index,
-                                               char* strNodeId,
-                                               SOPC_BuiltinId builtinType)
+                                               const char* strNodeId,
+                                               SOPC_BuiltinId builtinType,
+                                               int32_t valueRank,
+                                               uint32_t* arrayDimensions)
 {
     SOPC_FieldMetaData* fieldmetadata = SOPC_PublishedDataSet_Get_FieldMetaData_At(dataset, index);
-    SOPC_PubSub_ArrayDimension arrayDimension = {.valueRank = -1, .arrayDimensions = NULL};
-    SOPC_FieldMetaData_ArrayDimension_Move(fieldmetadata, &arrayDimension);
+    SOPC_PubSub_ArrayDimension arrayDimension = {.valueRank = valueRank, .arrayDimensions = arrayDimensions};
+    SOPC_FiledMetaDeta_SetCopy_ArrayDimension(fieldmetadata, &arrayDimension);
     SOPC_FieldMetaData_Set_BuiltinType(fieldmetadata, builtinType);
     SOPC_PublishedVariable* publishedVar = SOPC_FieldMetaData_Get_PublishedVariable(fieldmetadata);
     SOPC_ASSERT(NULL != publishedVar);
@@ -103,57 +108,94 @@ static void SOPC_PubSubConfig_SetPubVariableAt(SOPC_PublishedDataSet* dataset,
                                            13); // Value => AttributeId=13
 }
 
-static SOPC_DataSetReader* SOPC_PubSubConfig_SetSubMessageAt(SOPC_PubSubConnection* connection,
-                                                             uint16_t index,
-                                                             uint32_t publisherId,
-                                                             uint16_t messageId,
-                                                             uint32_t version,
-                                                             uint64_t interval,
-                                                             SOPC_SecurityMode_Type securityMode)
-{
-    SOPC_ReaderGroup* readerGroup = SOPC_PubSubConnection_Get_ReaderGroup_At(connection, index);
-    SOPC_ASSERT(readerGroup != NULL);
-    SOPC_ReaderGroup_Set_SecurityMode(readerGroup, securityMode);
-    SOPC_ReaderGroup_Set_GroupVersion(readerGroup, version);
-    SOPC_ReaderGroup_Set_GroupId(readerGroup, messageId);
-    bool allocSuccess = SOPC_ReaderGroup_Allocate_DataSetReader_Array(readerGroup, 1);
-    SOPC_ReaderGroup_Set_PublisherId_UInteger(readerGroup, publisherId);
-    if (allocSuccess)
-    {
-        SOPC_DataSetReader* reader = SOPC_ReaderGroup_Get_DataSetReader_At(readerGroup, 0);
-        SOPC_ASSERT(reader != NULL);
-        SOPC_DataSetReader_Set_DataSetWriterId(reader, messageId);
-        SOPC_DataSetReader_Set_ReceiveTimeout(reader, 2.0 * (double) interval);
-        return reader;
-    }
-    return NULL;
-}
+//static void SOPC_PubSubConfig_SetPubVariableAt(SOPC_PublishedDataSet* dataset,
+//                                               uint16_t index,
+//                                               char* strNodeId,
+//                                               SOPC_BuiltinId builtinType)
+//{
+//    SOPC_FieldMetaData* fieldmetadata = SOPC_PublishedDataSet_Get_FieldMetaData_At(dataset, index);
+//    SOPC_PubSub_ArrayDimension arrayDimension = {.valueRank = -1, .arrayDimensions = NULL};
+//    SOPC_FieldMetaData_ArrayDimension_Move(fieldmetadata, &arrayDimension);
+//    SOPC_FieldMetaData_Set_BuiltinType(fieldmetadata, builtinType);
+//    SOPC_PublishedVariable* publishedVar = SOPC_FieldMetaData_Get_PublishedVariable(fieldmetadata);
+//    SOPC_ASSERT(NULL != publishedVar);
+//    SOPC_NodeId* nodeId = SOPC_NodeId_FromCString(strNodeId, (int32_t) strlen(strNodeId));
+//    SOPC_ASSERT(NULL != nodeId);
+//    SOPC_PublishedVariable_Set_NodeId(publishedVar, nodeId);
+//    SOPC_PublishedVariable_Set_AttributeId(publishedVar,
+//                                           13); // Value => AttributeId=13
+//}
 
-static bool SOPC_PubSubConfig_SetSubNbVariables(SOPC_DataSetReader* reader, uint16_t nbVar)
-{
-    return SOPC_DataSetReader_Allocate_FieldMetaData_Array(reader, SOPC_TargetVariablesDataType, nbVar);
-}
+//uint32_t dim = 10;
+//static void SOPC_PubSubConfig_SetPubArrayAt(SOPC_PublishedDataSet* dataset,
+//                                               uint16_t index,
+//                                               char* strNodeId,
+//                                               SOPC_BuiltinId builtinType)
+//{
+//    SOPC_FieldMetaData* fieldmetadata = SOPC_PublishedDataSet_Get_FieldMetaData_At(dataset, index);
+//    SOPC_PubSub_ArrayDimension arrayDimension = {.valueRank = 1, .arrayDimensions = &dim};
+//    SOPC_FieldMetaData_ArrayDimension_Move(fieldmetadata, &arrayDimension);
+//    SOPC_FieldMetaData_Set_BuiltinType(fieldmetadata, builtinType);
+//    SOPC_PublishedVariable* publishedVar = SOPC_FieldMetaData_Get_PublishedVariable(fieldmetadata);
+//    SOPC_ASSERT(NULL != publishedVar);
+//    SOPC_NodeId* nodeId = SOPC_NodeId_FromCString(strNodeId, (int32_t) strlen(strNodeId));
+//    SOPC_ASSERT(NULL != nodeId);
+//    SOPC_PublishedVariable_Set_NodeId(publishedVar, nodeId);
+//    SOPC_PublishedVariable_Set_AttributeId(publishedVar,
+//                                           13); // Value => AttributeId=13
+//}
 
-static void SOPC_PubSubConfig_SetSubVariableAt(SOPC_DataSetReader* reader,
-                                               uint16_t index,
-                                               char* strNodeId,
-                                               SOPC_BuiltinId builtinType)
-{
-    SOPC_FieldMetaData* fieldmetadata = SOPC_DataSetReader_Get_FieldMetaData_At(reader, index);
-    SOPC_ASSERT(fieldmetadata != NULL);
+//static SOPC_DataSetReader* SOPC_PubSubConfig_SetSubMessageAt(SOPC_PubSubConnection* connection,
+//                                                             uint16_t index,
+//                                                             uint32_t publisherId,
+//                                                             uint16_t messageId,
+//                                                             uint32_t version,
+//                                                             uint64_t interval,
+//                                                             SOPC_SecurityMode_Type securityMode)
+//{
+//    SOPC_ReaderGroup* readerGroup = SOPC_PubSubConnection_Get_ReaderGroup_At(connection, index);
+//    SOPC_ASSERT(readerGroup != NULL);
+//    SOPC_ReaderGroup_Set_SecurityMode(readerGroup, securityMode);
+//    SOPC_ReaderGroup_Set_GroupVersion(readerGroup, version);
+//    SOPC_ReaderGroup_Set_GroupId(readerGroup, messageId);
+//    bool allocSuccess = SOPC_ReaderGroup_Allocate_DataSetReader_Array(readerGroup, 1);
+//    SOPC_ReaderGroup_Set_PublisherId_UInteger(readerGroup, publisherId);
+//    if (allocSuccess)
+//    {
+//        SOPC_DataSetReader* reader = SOPC_ReaderGroup_Get_DataSetReader_At(readerGroup, 0);
+//        SOPC_ASSERT(reader != NULL);
+//        SOPC_DataSetReader_Set_DataSetWriterId(reader, messageId);
+//        SOPC_DataSetReader_Set_ReceiveTimeout(reader, 2.0 * (double) interval);
+//        return reader;
+//    }
+//    return NULL;
+//}
 
-    /* fieldmetadata: type the field */
-    SOPC_PubSub_ArrayDimension arrayDimension = {.valueRank = -1, .arrayDimensions = NULL};
-    SOPC_FieldMetaData_ArrayDimension_Move(fieldmetadata, &arrayDimension);
-    SOPC_FieldMetaData_Set_BuiltinType(fieldmetadata, builtinType);
+// static bool SOPC_PubSubConfig_SetSubNbVariables(SOPC_DataSetReader* reader, uint16_t nbVar)
+// {
+//     return SOPC_DataSetReader_Allocate_FieldMetaData_Array(reader, SOPC_TargetVariablesDataType, nbVar);
+// }
 
-    /* FieldTarget: link to the source/target data */
-    SOPC_FieldTarget* fieldTarget = SOPC_FieldMetaData_Get_TargetVariable(fieldmetadata);
-    SOPC_ASSERT(fieldTarget != NULL);
-    SOPC_NodeId* nodeId = SOPC_NodeId_FromCString(strNodeId, (int32_t) strlen(strNodeId));
-    SOPC_FieldTarget_Set_NodeId(fieldTarget, nodeId);
-    SOPC_FieldTarget_Set_AttributeId(fieldTarget, 13); // Value => AttributeId=13
-}
+//static void SOPC_PubSubConfig_SetSubVariableAt(SOPC_DataSetReader* reader,
+//                                               uint16_t index,
+//                                               char* strNodeId,
+//                                               SOPC_BuiltinId builtinType)
+//{
+//    SOPC_FieldMetaData* fieldmetadata = SOPC_DataSetReader_Get_FieldMetaData_At(reader, index);
+//    SOPC_ASSERT(fieldmetadata != NULL);
+//
+//    /* fieldmetadata: type the field */
+//    SOPC_PubSub_ArrayDimension arrayDimension = {.valueRank = -1, .arrayDimensions = NULL};
+//    SOPC_FieldMetaData_ArrayDimension_Move(fieldmetadata, &arrayDimension);
+//    SOPC_FieldMetaData_Set_BuiltinType(fieldmetadata, builtinType);
+//
+//    /* FieldTarget: link to the source/target data */
+//    SOPC_FieldTarget* fieldTarget = SOPC_FieldMetaData_Get_TargetVariable(fieldmetadata);
+//    SOPC_ASSERT(fieldTarget != NULL);
+//    SOPC_NodeId* nodeId = SOPC_NodeId_FromCString(strNodeId, (int32_t) strlen(strNodeId));
+//    SOPC_FieldTarget_Set_NodeId(fieldTarget, nodeId);
+//    SOPC_FieldTarget_Set_AttributeId(fieldTarget, 13); // Value => AttributeId=13
+//}
 
 SOPC_PubSubConfiguration* SOPC_PubSubConfig_GetStatic(void)
 {
@@ -226,12 +268,14 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_GetStatic(void)
     }
     if (alloc)
     {
-        SOPC_PubSubConfig_SetPubVariableAt(dataset, 0, PUB_VAR_STRING, SOPC_String_Id);
-        SOPC_PubSubConfig_SetPubVariableAt(dataset, 1, PUB_VAR_UINT32, SOPC_UInt32_Id);
-        SOPC_PubSubConfig_SetPubVariableAt(dataset, 2, PUB_VAR_INT16, SOPC_Int16_Id);
-        SOPC_PubSubConfig_SetPubVariableAt(dataset, 3, PUB_VAR_BOOL, SOPC_Boolean_Id);
-        SOPC_PubSubConfig_SetPubVariableAt(dataset, 4, PUB_VAR_STATUS, SOPC_StatusCode_Id);
-        SOPC_PubSubConfig_SetPubVariableAt(dataset, 5, PUB_VAR_BYTE, SOPC_Byte_Id);
+        uint32_t dim1[1] = {10};
+        SOPC_PubSubConfig_SetPubVariableAt(dataset, 0, PUB_VAR_BATCH, SOPC_Int32_Id, 1, dim1);
+        //SOPC_PubSubConfig_SetPubVariableAt(dataset, 0, PUB_VAR_STRING, SOPC_String_Id);
+        //SOPC_PubSubConfig_SetPubVariableAt(dataset, 1, PUB_VAR_UINT32, SOPC_UInt32_Id);
+        //SOPC_PubSubConfig_SetPubVariableAt(dataset, 2, PUB_VAR_INT16, SOPC_Int16_Id);
+        //SOPC_PubSubConfig_SetPubVariableAt(dataset, 3, PUB_VAR_BOOL, SOPC_Boolean_Id);
+        //SOPC_PubSubConfig_SetPubVariableAt(dataset, 4, PUB_VAR_STATUS, SOPC_StatusCode_Id);
+        //SOPC_PubSubConfig_SetPubVariableAt(dataset, 5, PUB_VAR_BYTE, SOPC_Byte_Id);
     }
 
     /* 1 connection Sub */
@@ -272,29 +316,29 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_GetStatic(void)
         alloc = SOPC_PubSubConnection_Allocate_ReaderGroup_Array(connection, 1);
     }
 
-    SOPC_DataSetReader* reader = NULL;
+    //SOPC_DataSetReader* reader = NULL;
     /*** Sub Message ***/
 
-    if (alloc)
-    {
-        reader = SOPC_PubSubConfig_SetSubMessageAt(connection, 0, PUBLISHER_ID, MESSAGE_ID, MESSAGE_VERSION, 1000,
-                                                   security_Mode);
-        alloc = NULL != reader;
-    }
+    //if (alloc)
+    //{
+    //    reader = SOPC_PubSubConfig_SetSubMessageAt(connection, 0, PUBLISHER_ID, MESSAGE_ID, MESSAGE_VERSION, 1000,
+    //                                               security_Mode);
+    //    alloc = NULL != reader;
+    //}
 
-    if (alloc)
-    {
-        alloc = SOPC_PubSubConfig_SetSubNbVariables(reader, NB_SUB_VARS);
-    }
-    if (alloc)
-    {
-        SOPC_PubSubConfig_SetSubVariableAt(reader, 0, SUB_VAR_STRING, SOPC_String_Id);
-        SOPC_PubSubConfig_SetSubVariableAt(reader, 1, SUB_VAR_UINT32, SOPC_UInt32_Id);
-        SOPC_PubSubConfig_SetSubVariableAt(reader, 2, SUB_VAR_INT16, SOPC_Int16_Id);
-        SOPC_PubSubConfig_SetSubVariableAt(reader, 3, SUB_VAR_BOOL, SOPC_Boolean_Id);
-        SOPC_PubSubConfig_SetSubVariableAt(reader, 4, SUB_VAR_STATUS, SOPC_StatusCode_Id);
-        SOPC_PubSubConfig_SetSubVariableAt(reader, 5, SUB_VAR_BYTE, SOPC_Byte_Id);
-    }
+    //if (alloc)
+    //{
+    //    alloc = SOPC_PubSubConfig_SetSubNbVariables(reader, NB_SUB_VARS);
+    //}
+    //if (alloc)
+    //{
+    //    SOPC_PubSubConfig_SetSubVariableAt(reader, 0, SUB_VAR_STRING, SOPC_String_Id);
+    //    SOPC_PubSubConfig_SetSubVariableAt(reader, 1, SUB_VAR_UINT32, SOPC_UInt32_Id);
+    //    SOPC_PubSubConfig_SetSubVariableAt(reader, 2, SUB_VAR_INT16, SOPC_Int16_Id);
+    //    SOPC_PubSubConfig_SetSubVariableAt(reader, 3, SUB_VAR_BOOL, SOPC_Boolean_Id);
+    //    SOPC_PubSubConfig_SetSubVariableAt(reader, 4, SUB_VAR_STATUS, SOPC_StatusCode_Id);
+    //    SOPC_PubSubConfig_SetSubVariableAt(reader, 5, SUB_VAR_BYTE, SOPC_Byte_Id);
+    //}
 
     if (!alloc)
     {
