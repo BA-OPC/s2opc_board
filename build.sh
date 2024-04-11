@@ -32,6 +32,7 @@
 
 CURDIR=`pwd`
 EXEC_DIR=bin
+CMAKE_OPTIONS="-DUSE_STATIC_MBEDTLS_LIB=1 -DENABLE_TESTING=0"
 
 if [[ $CMAKE_TOOLCHAIN_FILE ]]; then
     BUILD_DIR=${BUILD_DIR:-build_toolchain}
@@ -50,6 +51,8 @@ append_cmake_option ()
         CMAKE_OPTIONS="$CMAKE_OPTIONS -D$1=$2"
     fi
 }
+
+cmake -E env CXXFLAGS="-DDEV"
 
 echo "Build log" > $CURDIR/build.log
 

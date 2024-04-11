@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "libs2opc_common_config.h": "c",
+        "sopc_common.h": "c",
+        "sopc_log_manager.h": "c"
+    }
+}

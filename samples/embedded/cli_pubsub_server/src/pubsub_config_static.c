@@ -27,29 +27,20 @@
 #include "sopc_crypto_profiles_lib_itf.h"
 
 #include "samples_platform_dep.h"
+#include "sopc_builtintypes.h"
+#include "sopc_pubsub_conf.h"
 #include "test_config.h"
 
 #define PUB_CNX_NAME "PubCnx#1"
 #define SUB_CNX_NAME "SubCnx#1"
 
 // These nodeIds must exist in AddressSpace!
-#define PUB_VAR_STRING "ns=1;s=PubString"
-#define PUB_VAR_BYTE "ns=1;s=PubByte"
-#define PUB_VAR_UINT32 "ns=1;s=PubUInt32"
-#define PUB_VAR_INT16 "ns=1;s=PubInt16"
-#define PUB_VAR_BOOL "ns=1;s=PubBool"
-#define PUB_VAR_STATUS "ns=1;s=PubStatusCode"
-
-#define PUB_VAR_BATCH "ns=2;i=6067"
+#define PUB_VAR_DOUBLE_TANK_LEVEL 	"ns=1;s=TankLevel"
+#define PUB_VAR_BOOL_HI_WARN 		"ns=1;s=LevelAboveHigh"
+#define PUB_VAR_BOOL_LO_WARN 		"ns=1;s=LevelUnderLow"
+#define PUB_VAR_BATCH 		"ns=2;s=6067"
 #define NB_PUB_VARS 1
 
-#define SUB_VAR_STRING "ns=1;s=SubString"
-#define SUB_VAR_BYTE "ns=1;s=SubByte"
-#define SUB_VAR_UINT32 "ns=1;s=SubUInt32"
-#define SUB_VAR_INT16 "ns=1;s=SubInt16"
-#define SUB_VAR_BOOL "ns=1;s=SubBool"
-#define SUB_VAR_STATUS "ns=1;s=SubStatusCode"
-#define NB_SUB_VARS 6
 
 #define PUBLISHER_ID 42
 #define MESSAGE_ID 20
@@ -88,6 +79,23 @@ static SOPC_PublishedDataSet* SOPC_PubSubConfig_InitDataSet(SOPC_PubSubConfigura
     return dataset;
 }
 
+//static void SOPC_PubSubConfig_SetPubVariableAt(SOPC_PublishedDataSet* dataset,
+//                                               uint16_t index,
+//                                               char* strNodeId,
+//                                               SOPC_BuiltinId builtinType)
+//{
+//    SOPC_FieldMetaData* fieldmetadata = SOPC_PublishedDataSet_Get_FieldMetaData_At(dataset, index);
+//    SOPC_FieldMetaData_Set_ValueRank(fieldmetadata, -1);
+//    SOPC_FieldMetaData_Set_BuiltinType(fieldmetadata, builtinType);
+//    SOPC_PublishedVariable* publishedVar = SOPC_FieldMetaData_Get_PublishedVariable(fieldmetadata);
+//    assert(NULL != publishedVar);
+//    SOPC_NodeId* nodeId = SOPC_NodeId_FromCString(strNodeId, (int32_t) strlen(strNodeId));
+//    assert(NULL != nodeId);
+//    SOPC_PublishedVariable_Set_NodeId(publishedVar, nodeId);
+//    SOPC_PublishedVariable_Set_AttributeId(publishedVar,
+//                                           13); // Value => AttributeId=13
+//}
+
 static void SOPC_PubSubConfig_SetPubVariableAt(SOPC_PublishedDataSet* dataset,
                                                uint16_t index,
                                                const char* strNodeId,
@@ -99,8 +107,10 @@ static void SOPC_PubSubConfig_SetPubVariableAt(SOPC_PublishedDataSet* dataset,
     SOPC_PubSub_ArrayDimension arrayDimension = {.valueRank = valueRank, .arrayDimensions = arrayDimensions};
     SOPC_FiledMetaDeta_SetCopy_ArrayDimension(fieldmetadata, &arrayDimension);
     SOPC_FieldMetaData_Set_BuiltinType(fieldmetadata, builtinType);
+
     SOPC_PublishedVariable* publishedVar = SOPC_FieldMetaData_Get_PublishedVariable(fieldmetadata);
     SOPC_ASSERT(NULL != publishedVar);
+
     SOPC_NodeId* nodeId = SOPC_NodeId_FromCString(strNodeId, (int32_t) strlen(strNodeId));
     SOPC_ASSERT(NULL != nodeId);
     SOPC_PublishedVariable_Set_NodeId(publishedVar, nodeId);
@@ -210,8 +220,7 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_GetStatic(void)
 
     /** connection pub 0 **/
 
-    if (alloc)
-    {
+    if (alloc) {
         // Set publisher id and address
         connection = SOPC_PubSubConfiguration_Get_PubConnection_At(config, 0);
         SOPC_PubSubConnection_Set_PublisherId_UInteger(connection, PUBLISHER_ID);
@@ -227,25 +236,21 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_GetStatic(void)
     if (alloc)
     {
         const char* itf_name = CONFIG_SOPC_PUBLISHER_ITF_NAME;
-        if (CONFIG_SOPC_PUBLISHER_ITF_NAME[0] == '\0')
-        {
+        if (CONFIG_SOPC_PUBLISHER_ITF_NAME[0] == '\0') {
             // Force default interface if not specified
             itf_name = SOPC_Platform_Get_Default_Net_Itf();
         }
-        if (itf_name[0] != '\0')
-        {
+        if (itf_name[0] != '\0') {
             alloc = SOPC_PubSubConnection_Set_InterfaceName(connection, itf_name);
         }
     }
 
-    if (alloc)
-    {
+    if (alloc) {
         // 2 pub messages
         alloc = SOPC_PubSubConnection_Allocate_WriterGroup_Array(connection, 1);
     }
 
-    if (alloc)
-    {
+    if (alloc) {
         // 2 published data sets
         alloc = SOPC_PubSubConfiguration_Allocate_PublishedDataSet_Array(config, 1);
     }
@@ -344,6 +349,9 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_GetStatic(void)
     {
         SOPC_PubSubConfiguration_Delete(config);
         return NULL;
+        //SOPC_PubSubConfig_SetPubVariableAt(dataset, 0, PUB_VAR_DOUBLE_TANK_LEVEL, SOPC_Double_Id);
+        //SOPC_PubSubConfig_SetPubVariableAt(dataset, 1, PUB_VAR_BOOL_HI_WARN, SOPC_Boolean_Id);
+        //SOPC_PubSubConfig_SetPubVariableAt(dataset, 2, PUB_VAR_BOOL_LO_WARN, SOPC_Boolean_Id);
     }
 
     return config;
