@@ -35,6 +35,7 @@
  */
 // System includes
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -48,7 +49,9 @@
 #include "samples_platform_dep.h"
 #include "sopc_assert.h"
 #include "sopc_atomic.h"
+#include "sopc_builtintypes.h"
 #include "sopc_encodeable.h"
+#include "sopc_enums.h"
 #include "sopc_logger.h"
 #include "sopc_macros.h"
 #include "sopc_mem_alloc.h"
@@ -90,19 +93,19 @@ static int32_t gStopped = true;
 
 static int32_t value_PubSubStartStop = 0;
 
-static bool Server_LocalWriteSingleNode(const SOPC_NodeId* pNid, SOPC_DataValue* pDv);
+//static bool Server_LocalWriteSingleNode(const SOPC_NodeId* pNid, SOPC_DataValue* pDv);
 static SOPC_DataValue* Server_LocalReadSingleNode(const SOPC_NodeId* pNid);
 
 #define NID_MEASURED_FORCE "ns=1;s=Force"
 #define NID_TANK_LEVEL "ns=1;s=TankLevel"
 #define NID_RAW_VOLTAGE "ns=1;s=RawVoltage"
-static int write_double_value(double value, char* node_id);
-static int write_bool_value(bool value, char* node_id);
+//static int write_double_value(double value, char* node_id);
+//static int write_bool_value(bool value, char* node_id);
 
-static int write_underflow_warning(double tank_level);
-static int write_overflow_warning(double tank_level);
-static int read_tara(double* tara);
-static int read_slope(double* slope);
+//static int read_slope(double* slope);
+//static int write_overflow_warning(double tank_level);
+//static int write_underflow_warning(double tank_level);
+//static int read_tara(double* tara);
 static int update_publisher(void);
 
 /***************************************************/
@@ -145,20 +148,20 @@ static void log_UserCallback(const char* context, const char* text)
 }
 
 /***************************************************/
-static void cacheSync_WriteToCache(const SOPC_NodeId* pNid, const SOPC_DataValue* pDv)
-{
-    Cache_Lock();
-    SOPC_DataValue* pDvCache = Cache_Get(pNid);
-
-    // Only write values of cache that are already defined
-    if (pDvCache != NULL)
-    {
-        // Replace content of Cache
-        SOPC_DataValue_Clear(pDvCache);
-        SOPC_DataValue_Copy(pDvCache, pDv);
-    }
-    Cache_Unlock();
-}
+//static void cacheSync_WriteToCache(const SOPC_NodeId* pNid, const SOPC_DataValue* pDv)
+//{
+//    Cache_Lock();
+//    SOPC_DataValue* pDvCache = Cache_Get(pNid);
+//
+//    // Only write values of cache that are already defined
+//    if (pDvCache != NULL)
+//    {
+//        // Replace content of Cache
+//        SOPC_DataValue_Clear(pDvCache);
+//        SOPC_DataValue_Copy(pDvCache, pDv);
+//    }
+//    Cache_Unlock();
+//}
 
 /***************************************************/
 
@@ -169,36 +172,36 @@ static void cacheSync_WriteToCache(const SOPC_NodeId* pNid, const SOPC_DataValue
  * @param pDv The DataValue to write
  * @post \a localServiceAsyncRespCallback will be called with operation result
  */
-static bool Server_LocalWriteSingleNode(const SOPC_NodeId* pNid, SOPC_DataValue* pDv)
-{
-    OpcUa_WriteRequest* request = SOPC_WriteRequest_Create(1);
-    SOPC_ASSERT(NULL != request);
-
-    SOPC_ReturnStatus status;
-    status = SOPC_WriteRequest_SetWriteValue(request, 0, pNid, SOPC_AttributeId_Value, NULL, pDv);
-    if (status != SOPC_STATUS_OK)
-    {
-        LOG_WARNING("SetWriteValue failed with code  %d", status);
-        SOPC_Free(request);
-    }
-    else
-    {
-        // Synchronize cache for PubSub
-        cacheSync_WriteToCache(pNid, pDv);
-
-        // param is not used here because this is a static context. In a more complex application,
-        // param can be set to any context pointer that way be required by the application
-        // We use a simple marker to show data transmission from here to localServiceAsyncRespCallback
-        status = SOPC_ServerHelper_LocalServiceAsync(request, ASYNCH_CONTEXT_PARAM);
-        if (status != SOPC_STATUS_OK)
-        {
-            LOG_WARNING("LocalServiceAsync failed with code  (%d)", status);
-            SOPC_Free(request);
-        }
-    }
-
-    return status == SOPC_STATUS_OK;
-}
+//static bool Server_LocalWriteSingleNode(const SOPC_NodeId* pNid, SOPC_DataValue* pDv)
+//{
+//    OpcUa_WriteRequest* request = SOPC_WriteRequest_Create(1);
+//    SOPC_ASSERT(NULL != request);
+//
+//    SOPC_ReturnStatus status;
+//    status = SOPC_WriteRequest_SetWriteValue(request, 0, pNid, SOPC_AttributeId_Value, NULL, pDv);
+//    if (status != SOPC_STATUS_OK)
+//    {
+//        LOG_WARNING("SetWriteValue failed with code  %d", status);
+//        SOPC_Free(request);
+//    }
+//    else
+//    {
+//        // Synchronize cache for PubSub
+//        cacheSync_WriteToCache(pNid, pDv);
+//
+//        // param is not used here because this is a static context. In a more complex application,
+//        // param can be set to any context pointer that way be required by the application
+//        // We use a simple marker to show data transmission from here to localServiceAsyncRespCallback
+//        status = SOPC_ServerHelper_LocalServiceAsync(request, ASYNCH_CONTEXT_PARAM);
+//        if (status != SOPC_STATUS_OK)
+//        {
+//            LOG_WARNING("LocalServiceAsync failed with code  (%d)", status);
+//            SOPC_Free(request);
+//        }
+//    }
+//
+//    return status == SOPC_STATUS_OK;
+//}
 
 /***************************************************/
 /***
@@ -278,6 +281,16 @@ static void setupPubSub(void)
     Cache_Initialize(pPubSubConfig);
 }
 
+typedef struct _RawMeasurement {
+    int32_t x;
+    int32_t y;
+    int32_t z;
+} RawMeasurement;
+
+RawMeasurement measurement_buffer[10];
+int32_t measurement_count = 0;
+
+static SOPC_ReturnStatus write_batch(RawMeasurement* batch, int32_t count);
 /***************************************************/
 void SOPC_Platform_Main(void)
 {
@@ -286,11 +299,11 @@ void SOPC_Platform_Main(void)
 
     int32_t val_mv;
 
-    double tank_level = 0;
-    double measured_force = 0;
-    double tara = 0;
-    double adc = 0;
-    double slope = 0;
+    //double tank_level = 0;
+    //double measured_force = 0;
+    //double tara = 0;
+    //double adc = 0;
+    //double slope = 0;
 
     int err;
     int16_t buf;
@@ -381,7 +394,7 @@ void SOPC_Platform_Main(void)
     {
         SOPC_Sleep(50 * 20);
 
-        read_tara(&tara);
+        //read_tara(&tara);
 
         /* Read the ADC, and convert it into liters*/
         // printf("ADC reading:- %s, channel %d: ", adc_channels[0].dev->name, adc_channels[0].channel_id);
@@ -390,22 +403,33 @@ void SOPC_Platform_Main(void)
         // printf("%" PRId16, buf);
         val_mv = buf;
         err = adc_raw_to_millivolts_dt(&adc_channels[0], &val_mv);
+
+        measurement_buffer[measurement_count++] = (RawMeasurement) {
+            .x = val_mv,
+            .y = val_mv & 0xAAAAAAAA,
+            .z = val_mv & 0x55555555,
+        };
+        if (measurement_count >= ARRAY_SIZE(measurement_buffer)) {
+            write_batch(measurement_buffer, ARRAY_SIZE(measurement_buffer));
+            measurement_count = 0;
+        }
+
         // printf(" = %" PRId32 " mV\n", val_mv);
-        adc = (double) val_mv / 1000;
-        write_double_value(adc, NID_RAW_VOLTAGE);
-        read_slope(&slope);
-        measured_force = (adc * slope); // 1.5kg => 15N => 2.4V  --> divide vy 0.16
-        write_double_value(measured_force, NID_MEASURED_FORCE);
-        tank_level = measured_force / 10 - tara;
+        //adc = (double) val_mv / 1000;
+        //write_double_value(adc, NID_RAW_VOLTAGE);
+        //read_slope(&slope);
+        //measured_force = (adc * slope); // 1.5kg => 15N => 2.4V  --> divide vy 0.16
+        //write_double_value(measured_force, NID_MEASURED_FORCE);
+        //tank_level = measured_force / 10 - tara;
 
-        // uint64_t tmp = (mock_value&0xff) << 56;
-        // mock_value = tmp | (mock_value >> 8);
-        // tank_level = *((double*)(void*)&mock_value);
+        //// uint64_t tmp = (mock_value&0xff) << 56;
+        //// mock_value = tmp | (mock_value >> 8);
+        //// tank_level = *((double*)(void*)&mock_value);
 
-        // write_double_value(adc, NID_TANK_LEVEL);
-        write_double_value(tank_level, NID_TANK_LEVEL);
-        write_overflow_warning(tank_level);
-        write_underflow_warning(tank_level);
+        //// write_double_value(adc, NID_TANK_LEVEL);
+        //write_double_value(tank_level, NID_TANK_LEVEL);
+        //write_overflow_warning(tank_level);
+        //write_underflow_warning(tank_level);
 
         update_publisher();
     }
@@ -425,140 +449,160 @@ void SOPC_Platform_Main(void)
 }
 
 /***************************************************/
-static int write_double_value(double value, char* node_id)
+static SOPC_ReturnStatus write_batch(RawMeasurement* batch, int32_t count)
 {
     SOPC_NodeId nid;
-    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid, node_id, (int32_t) strlen(node_id));
+    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid, "ns=2;i=6067", (int32_t) 11);
     SOPC_ASSERT(SOPC_STATUS_OK == status);
     SOPC_DataValue dv;
     SOPC_DataValue_Initialize(&dv);
-
-    dv.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+    dv.Value.ArrayType = SOPC_VariantArrayType_Array;
     dv.Value.DoNotClear = false;
-    dv.Value.BuiltInTypeId = SOPC_Double_Id;
-    dv.Value.Value.Doublev = value;
+    dv.Value.BuiltInTypeId = SOPC_Int32_Id;
+    dv.Value.Value.Array.Length = count;
+    dv.Value.Value.Array.Content.Int32Arr = (int32_t*) batch;
 
-    Server_LocalWriteSingleNode(&nid, &dv);
-
-    SOPC_NodeId_Clear(&nid);
-    SOPC_DataValue_Clear(&dv);
-    return 0;
-}
-
-static int write_bool_value(bool value, char* node_id)
-{
-    SOPC_NodeId nid_write;
-    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid_write, node_id, (int32_t) strlen(node_id));
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
-    SOPC_DataValue dv_write;
-    SOPC_DataValue_Initialize(&dv_write);
-
-    dv_write.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
-    dv_write.Value.DoNotClear = false;
-    dv_write.Value.BuiltInTypeId = SOPC_Boolean_Id;
-    dv_write.Value.Value.Boolean = value;
-
-    Server_LocalWriteSingleNode(&nid_write, &dv_write);
-    SOPC_NodeId_Clear(&nid_write);
-    SOPC_DataValue_Clear(&dv_write);
-
-    return 0;
-}
-
-static SOPC_ReturnStatus read_double_value(double* result, char* node_id)
-{
-    SOPC_NodeId nid_read;
-    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid_read, node_id, (int32_t) strlen(node_id));
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
     Cache_Lock();
-    SOPC_DataValue* dv_read = Cache_Get(&nid_read);
+    Cache_Set(&nid, &dv);
     Cache_Unlock();
-    // Server_LocalReadSingleNode(&nid_read);
 
-    if (NULL == dv_read)
-    {
-        PRINT("Failed to read node '%s'\n", node_id);
-        SOPC_NodeId_Clear(&nid_read);
-        return SOPC_STATUS_NOK;
-    }
-
-    *result = dv_read->Value.Value.Doublev;
-
-    SOPC_NodeId_Clear(&nid_read);
     return SOPC_STATUS_OK;
 }
 
-SOPC_ReturnStatus read_uint32_value(uint32_t* result, char* node_id)
-{
-    SOPC_NodeId nid_read;
-    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid_read, node_id, (int32_t) strlen(node_id));
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
-    Cache_Lock();
-    SOPC_DataValue* dv_read = Cache_Get(&nid_read);
-    Cache_Unlock();
-    // Server_LocalReadSingleNode(&nid_read);
-
-    if (NULL == dv_read)
-    {
-        PRINT("Failed to read node '%s'\n", node_id);
-        SOPC_NodeId_Clear(&nid_read);
-        return SOPC_STATUS_NOK;
-    }
-
-    *result = dv_read->Value.Value.Uint32;
-
-    SOPC_NodeId_Clear(&nid_read);
-    return SOPC_STATUS_OK;
-}
-
-static int write_overflow_warning(double tank_level)
-{
-    double limit;
-    SOPC_ReturnStatus status = read_double_value(&limit, "ns=1;s=HiLimitTankLevel");
-    if (status == SOPC_STATUS_NOK)
-    {
-        return 1;
-    }
-
-    write_bool_value(tank_level > limit, "ns=1;s=LevelAboveHigh");
-
-    return 0;
-}
-
-static int write_underflow_warning(double tank_level)
-{
-    double limit;
-    SOPC_ReturnStatus status = read_double_value(&limit, "ns=1;s=LoLimitTankLevel");
-    if (status == SOPC_STATUS_NOK)
-    {
-        return 1;
-    }
-
-    write_bool_value(tank_level < limit, "ns=1;s=LevelUnderLow");
-
-    return 0;
-}
-
-static int read_tara(double* tara)
-{
-    SOPC_ReturnStatus val = read_double_value(tara, "ns=1;s=Tara");
-    if (val == SOPC_STATUS_NOK)
-    {
-        return 1;
-    }
-
-    return 0;
-}
-
-static int read_slope(double* slope)
-{
-    SOPC_ReturnStatus val = read_double_value(slope, "ns=1;s=Slope");
-    if (val == SOPC_STATUS_NOK)
-    {
-        return 1;
-    }
-    return 0;
-}
+//static int write_double_value(double value, char* node_id)
+//{
+//    SOPC_NodeId nid;
+//    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid, node_id, (int32_t) strlen(node_id));
+//    SOPC_ASSERT(SOPC_STATUS_OK == status);
+//    SOPC_DataValue dv;
+//    SOPC_DataValue_Initialize(&dv);
+//
+//    dv.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+//    dv.Value.DoNotClear = false;
+//    dv.Value.BuiltInTypeId = SOPC_Double_Id;
+//    dv.Value.Value.Doublev = value;
+//
+//    Server_LocalWriteSingleNode(&nid, &dv);
+//
+//    SOPC_NodeId_Clear(&nid);
+//    SOPC_DataValue_Clear(&dv);
+//    return 0;
+//}
+//
+//static int write_bool_value(bool value, char* node_id)
+//{
+//    SOPC_NodeId nid_write;
+//    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid_write, node_id, (int32_t) strlen(node_id));
+//    SOPC_ASSERT(SOPC_STATUS_OK == status);
+//    SOPC_DataValue dv_write;
+//    SOPC_DataValue_Initialize(&dv_write);
+//
+//    dv_write.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+//    dv_write.Value.DoNotClear = false;
+//    dv_write.Value.BuiltInTypeId = SOPC_Boolean_Id;
+//    dv_write.Value.Value.Boolean = value;
+//
+//    Server_LocalWriteSingleNode(&nid_write, &dv_write);
+//    SOPC_NodeId_Clear(&nid_write);
+//    SOPC_DataValue_Clear(&dv_write);
+//
+//    return 0;
+//}
+//
+//static SOPC_ReturnStatus read_double_value(double* result, char* node_id)
+//{
+//    SOPC_NodeId nid_read;
+//    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid_read, node_id, (int32_t) strlen(node_id));
+//    SOPC_ASSERT(SOPC_STATUS_OK == status);
+//    Cache_Lock();
+//    SOPC_DataValue* dv_read = Cache_Get(&nid_read);
+//    Cache_Unlock();
+//    // Server_LocalReadSingleNode(&nid_read);
+//
+//    if (NULL == dv_read)
+//    {
+//        PRINT("Failed to read node '%s'\n", node_id);
+//        SOPC_NodeId_Clear(&nid_read);
+//        return SOPC_STATUS_NOK;
+//    }
+//
+//    *result = dv_read->Value.Value.Doublev;
+//
+//    SOPC_NodeId_Clear(&nid_read);
+//    return SOPC_STATUS_OK;
+//}
+//
+//SOPC_ReturnStatus read_uint32_value(uint32_t* result, char* node_id)
+//{
+//    SOPC_NodeId nid_read;
+//    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid_read, node_id, (int32_t) strlen(node_id));
+//    SOPC_ASSERT(SOPC_STATUS_OK == status);
+//    Cache_Lock();
+//    SOPC_DataValue* dv_read = Cache_Get(&nid_read);
+//    Cache_Unlock();
+//    // Server_LocalReadSingleNode(&nid_read);
+//
+//    if (NULL == dv_read)
+//    {
+//        PRINT("Failed to read node '%s'\n", node_id);
+//        SOPC_NodeId_Clear(&nid_read);
+//        return SOPC_STATUS_NOK;
+//    }
+//
+//    *result = dv_read->Value.Value.Uint32;
+//
+//    SOPC_NodeId_Clear(&nid_read);
+//    return SOPC_STATUS_OK;
+//}
+//
+//static int write_overflow_warning(double tank_level)
+//{
+//    double limit;
+//    SOPC_ReturnStatus status = read_double_value(&limit, "ns=1;s=HiLimitTankLevel");
+//    if (status == SOPC_STATUS_NOK)
+//    {
+//        return 1;
+//    }
+//
+//    write_bool_value(tank_level > limit, "ns=1;s=LevelAboveHigh");
+//
+//    return 0;
+//}
+//
+//static int write_underflow_warning(double tank_level)
+//{
+//    double limit;
+//    SOPC_ReturnStatus status = read_double_value(&limit, "ns=1;s=LoLimitTankLevel");
+//    if (status == SOPC_STATUS_NOK)
+//    {
+//        return 1;
+//    }
+//
+//    write_bool_value(tank_level < limit, "ns=1;s=LevelUnderLow");
+//
+//    return 0;
+//}
+//
+//static int read_tara(double* tara)
+//{
+//    SOPC_ReturnStatus val = read_double_value(tara, "ns=1;s=Tara");
+//    if (val == SOPC_STATUS_NOK)
+//    {
+//        return 1;
+//    }
+//
+//    return 0;
+//}
+//
+//static int read_slope(double* slope)
+//{
+//    SOPC_ReturnStatus val = read_double_value(slope, "ns=1;s=Slope");
+//    if (val == SOPC_STATUS_NOK)
+//    {
+//        return 1;
+//    }
+//    return 0;
+//}
 
 static int update_publisher(void)
 {

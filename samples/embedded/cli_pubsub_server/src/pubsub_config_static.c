@@ -24,13 +24,16 @@
 #include <string.h>
 
 #include "samples_platform_dep.h"
+#include "sopc_builtintypes.h"
+#include "sopc_pubsub_conf.h"
 #include "test_config.h"
 
 // These nodeIds must exist in AddressSpace!
 #define PUB_VAR_DOUBLE_TANK_LEVEL 	"ns=1;s=TankLevel"
 #define PUB_VAR_BOOL_HI_WARN 		"ns=1;s=LevelAboveHigh"
 #define PUB_VAR_BOOL_LO_WARN 		"ns=1;s=LevelUnderLow"
-#define NB_PUB_VARS 3
+#define PUB_VAR_BATCH 		"ns=2;s=6067"
+#define NB_PUB_VARS 1
 
 
 #define PUBLISHER_ID 42
@@ -70,16 +73,36 @@ static SOPC_PublishedDataSet* SOPC_PubSubConfig_InitDataSet(SOPC_PubSubConfigura
     return dataset;
 }
 
-static void SOPC_PubSubConfig_SetPubVariableAt(SOPC_PublishedDataSet* dataset,
+//static void SOPC_PubSubConfig_SetPubVariableAt(SOPC_PublishedDataSet* dataset,
+//                                               uint16_t index,
+//                                               char* strNodeId,
+//                                               SOPC_BuiltinId builtinType)
+//{
+//    SOPC_FieldMetaData* fieldmetadata = SOPC_PublishedDataSet_Get_FieldMetaData_At(dataset, index);
+//    SOPC_FieldMetaData_Set_ValueRank(fieldmetadata, -1);
+//    SOPC_FieldMetaData_Set_BuiltinType(fieldmetadata, builtinType);
+//    SOPC_PublishedVariable* publishedVar = SOPC_FieldMetaData_Get_PublishedVariable(fieldmetadata);
+//    assert(NULL != publishedVar);
+//    SOPC_NodeId* nodeId = SOPC_NodeId_FromCString(strNodeId, (int32_t) strlen(strNodeId));
+//    assert(NULL != nodeId);
+//    SOPC_PublishedVariable_Set_NodeId(publishedVar, nodeId);
+//    SOPC_PublishedVariable_Set_AttributeId(publishedVar,
+//                                           13); // Value => AttributeId=13
+//}
+
+static void SOPC_PubSubConfig_SetPubArrayAt(SOPC_PublishedDataSet* dataset,
                                                uint16_t index,
                                                char* strNodeId,
                                                SOPC_BuiltinId builtinType)
 {
     SOPC_FieldMetaData* fieldmetadata = SOPC_PublishedDataSet_Get_FieldMetaData_At(dataset, index);
-    SOPC_FieldMetaData_Set_ValueRank(fieldmetadata, -1);
+    SOPC_FieldMetaData_Set_ValueRank(fieldmetadata, 1);
     SOPC_FieldMetaData_Set_BuiltinType(fieldmetadata, builtinType);
+
     SOPC_PublishedVariable* publishedVar = SOPC_FieldMetaData_Get_PublishedVariable(fieldmetadata);
     assert(NULL != publishedVar);
+
+
     SOPC_NodeId* nodeId = SOPC_NodeId_FromCString(strNodeId, (int32_t) strlen(strNodeId));
     assert(NULL != nodeId);
     SOPC_PublishedVariable_Set_NodeId(publishedVar, nodeId);
@@ -146,9 +169,10 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_GetStatic(void)
     }
     if (alloc)
     {
-        SOPC_PubSubConfig_SetPubVariableAt(dataset, 0, PUB_VAR_DOUBLE_TANK_LEVEL, SOPC_Double_Id);
-        SOPC_PubSubConfig_SetPubVariableAt(dataset, 1, PUB_VAR_BOOL_HI_WARN, SOPC_Boolean_Id);
-        SOPC_PubSubConfig_SetPubVariableAt(dataset, 2, PUB_VAR_BOOL_LO_WARN, SOPC_Boolean_Id);
+        //SOPC_PubSubConfig_SetPubVariableAt(dataset, 0, PUB_VAR_DOUBLE_TANK_LEVEL, SOPC_Double_Id);
+        //SOPC_PubSubConfig_SetPubVariableAt(dataset, 1, PUB_VAR_BOOL_HI_WARN, SOPC_Boolean_Id);
+        //SOPC_PubSubConfig_SetPubVariableAt(dataset, 2, PUB_VAR_BOOL_LO_WARN, SOPC_Boolean_Id);
+        SOPC_PubSubConfig_SetPubArrayAt(dataset, 0, PUB_VAR_BATCH, SOPC_Int32_Id);
     }
 
     return config;
