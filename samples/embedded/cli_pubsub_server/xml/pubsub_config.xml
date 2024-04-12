@@ -1,0 +1,16 @@
+<PubSub xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="s2opc_pubsub_config.xsd">
+    <connection address="opc.udp://232.1.2.100:4840" mode="publisher" publisherId="i=42">
+        <message groupId="20" groupVersion="1" publishingInterval=".1" securityMode="none">
+        <!--dataset>
+            <variable nodeId="ns=2;i=6067" dataType="Int32" valueRank="1" arrayDimensions="10" displayName="MyPubArray"/>
+          </dataset-->
+          <dataset>
+          <!-- one to many -->
+            <variable nodeId="ns=1;s=PubBool" displayName="varBool" dataType="Boolean"/>
+            <variable nodeId="ns=1;s=PubString" displayName="varString" dataType="String"/>
+            <variable nodeId="ns=2;i=6067" dataType="Int32" valueRank="1" arrayDimensions="10" displayName="MyPubArray"/>
+            <!-- the nodeId is used to retrieve the variable in the adresse space -->
+          </dataset>
+        </message>
+    </connection>
+</PubSub>

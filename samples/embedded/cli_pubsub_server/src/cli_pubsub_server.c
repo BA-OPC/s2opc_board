@@ -149,20 +149,20 @@ static void log_UserCallback(const char* context, const char* text)
 }
 
 /***************************************************/
-//static void cacheSync_WriteToCache(const SOPC_NodeId* pNid, const SOPC_DataValue* pDv)
-//{
-//    Cache_Lock();
-//    SOPC_DataValue* pDvCache = Cache_Get(pNid);
-//
-//    // Only write values of cache that are already defined
-//    if (pDvCache != NULL)
-//    {
-//        // Replace content of Cache
-//        SOPC_DataValue_Clear(pDvCache);
-//        SOPC_DataValue_Copy(pDvCache, pDv);
-//    }
-//    Cache_Unlock();
-//}
+static void cacheSync_WriteToCache(const SOPC_NodeId* pNid, const SOPC_DataValue* pDv)
+{
+    Cache_Lock();
+    SOPC_DataValue* pDvCache = Cache_Get(pNid);
+
+    // Only write values of cache that are already defined
+    if (pDvCache != NULL)
+    {
+        // Replace content of Cache
+        SOPC_DataValue_Clear(pDvCache);
+        SOPC_DataValue_Copy(pDvCache, pDv);
+    }
+    Cache_Unlock();
+}
 
 /***************************************************/
 
@@ -345,29 +345,16 @@ void SOPC_Platform_Main(void)
 
     gLastReceptionDateMs = SOPC_RealTime_Create(NULL);
 
-    SOPC_NodeId nid_slope;
-    SOPC_NodeId nid_tara;
-
     setupPubSub();
-    {
-        SOPC_DataValue slope;
-        SOPC_DataValue_Initialize(&slope);
-        slope.Value.Value.Uint32 = 38;
-        slope.Value.BuiltInTypeId = SOPC_UInt32_Id;
-        slope.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
-        SOPC_NodeId_InitializeFromCString(&nid_slope, "ns=1;s=Slope", 12);
-        Cache_Set(&nid_slope, &slope);
-    }
-
-    {
-        SOPC_DataValue tara;
-        SOPC_DataValue_Initialize(&tara);
-        tara.Value.Value.Uint32 = 55;
-        tara.Value.BuiltInTypeId = SOPC_UInt32_Id;
-        tara.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
-        SOPC_NodeId_InitializeFromCString(&nid_tara, "ns=1;s=Tara", 11);
-        Cache_Set(&nid_tara, &tara);
-    }
+    //{
+    //    SOPC_DataValue tara;
+    //    SOPC_DataValue_Initialize(&tara);
+    //    tara.Value.Value.Uint32 = 55;
+    //    tara.Value.BuiltInTypeId = SOPC_UInt32_Id;
+    //    tara.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+    //    SOPC_NodeId_InitializeFromCString(&nid_tara, "ns=1;s=Tara", 11);
+    //    Cache_Set(&nid_tara, &tara);
+    //}
 
     //////////////////////////////////
     SOPC_Atomic_Int_Set(&gStopped, 0);
@@ -456,18 +443,16 @@ static SOPC_ReturnStatus write_batch(RawMeasurement* batch, int32_t count)
     SOPC_NodeId nid;
     SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid, "ns=2;i=6067", (int32_t) 11);
     SOPC_ASSERT(SOPC_STATUS_OK == status);
+
     SOPC_DataValue dv;
     SOPC_DataValue_Initialize(&dv);
     dv.Value.ArrayType = SOPC_VariantArrayType_Array;
     dv.Value.DoNotClear = false;
     dv.Value.BuiltInTypeId = SOPC_Int32_Id;
     dv.Value.Value.Array.Length = count;
-    dv.Value.Value.Array.Content.Int32Arr = (int32_t*) batch;
+    dv.Value.Value.Array.Content.Int32Arr = (int32_t*)batch;
 
-    Cache_Lock();
-    Cache_Set(&nid, &dv);
-    Cache_Unlock();
-
+    cacheSync_WriteToCache(&nid, &dv);
     return SOPC_STATUS_OK;
 }
 
