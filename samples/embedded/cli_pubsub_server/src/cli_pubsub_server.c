@@ -91,10 +91,10 @@ static void log_UserCallback(const char* context, const char* text);
 /***************************************************/
 static int32_t gStopped = true;
 
-static int32_t value_PubSubStartStop = 0;
+// static int32_t value_PubSubStartStop = 0;
 
 //static bool Server_LocalWriteSingleNode(const SOPC_NodeId* pNid, SOPC_DataValue* pDv);
-static SOPC_DataValue* Server_LocalReadSingleNode(const SOPC_NodeId* pNid);
+// static SOPC_DataValue* Server_LocalReadSingleNode(const SOPC_NodeId* pNid);
 
 #define NID_MEASURED_FORCE "ns=1;s=Force"
 #define NID_TANK_LEVEL "ns=1;s=TankLevel"
@@ -106,7 +106,7 @@ static SOPC_DataValue* Server_LocalReadSingleNode(const SOPC_NodeId* pNid);
 //static int write_overflow_warning(double tank_level);
 //static int write_underflow_warning(double tank_level);
 //static int read_tara(double* tara);
-static int update_publisher(void);
+// static int update_publisher(void);
 
 /***************************************************/
 /**               PUBSUB VARIABLES CONTENT         */
@@ -173,8 +173,8 @@ static void cacheSync_WriteToCache(const SOPC_NodeId* pNid, const SOPC_DataValue
  * @param pDv The DataValue to write
  * @post \a localServiceAsyncRespCallback will be called with operation result
  */
-//static bool Server_LocalWriteSingleNode(const SOPC_NodeId* pNid, SOPC_DataValue* pDv)
-//{
+// static bool Server_LocalWriteSingleNode(const SOPC_NodeId* pNid, SOPC_DataValue* pDv)
+// {
 //    OpcUa_WriteRequest* request = SOPC_WriteRequest_Create(1);
 //    SOPC_ASSERT(NULL != request);
 //
@@ -202,7 +202,7 @@ static void cacheSync_WriteToCache(const SOPC_NodeId* pNid, const SOPC_DataValue
 //    }
 //
 //    return status == SOPC_STATUS_OK;
-//}
+// }
 
 /***************************************************/
 /***
@@ -211,49 +211,49 @@ static void cacheSync_WriteToCache(const SOPC_NodeId* pNid, const SOPC_DataValue
  * @return a new allocated DataValue containing the result (or NULL in case of failure).
  *      Shall be freed by caller after use.
  */
-static SOPC_DataValue* Server_LocalReadSingleNode(const SOPC_NodeId* pNid)
-{
-    OpcUa_ReadRequest* request = SOPC_ReadRequest_Create(1, OpcUa_TimestampsToReturn_Neither);
-    OpcUa_ReadResponse* response = NULL;
-    SOPC_ASSERT(NULL != request);
-
-    SOPC_ReturnStatus status;
-    status = SOPC_ReadRequest_SetReadValue(request, 0, pNid, SOPC_AttributeId_Value, NULL);
-    if (status != SOPC_STATUS_OK)
-    {
-        LOG_WARNING("Read Value failed with code  %d", status);
-        SOPC_Free(request);
-        return NULL;
-    }
-
-    // TODO: this obviously doesn't work, as there is no server running
-    //       maybe connect to a different server, which is running the config,
-    //       or pull in a minimal server config
-    //       or use the "cache" to store the required node ids (initialization tbd.)
-    //
-    // status = SOPC_ClientCommon_Connect(const SOPC_LibSub_ConfigurationId cfgId, SOPC_LibSub_ConnectionId* pCliId);
-
-    status = SOPC_ServerHelper_LocalServiceSync(request, (void**) &response);
-    if (status != SOPC_STATUS_OK)
-    {
-        LOG_WARNING("Read Value failed with code  %d", status);
-        SOPC_ASSERT(NULL == response);
-        SOPC_Free(request);
-        return NULL;
-    }
-
-    SOPC_DataValue* result = NULL;
-    if (response != NULL && response->NoOfResults == 1)
-    {
-        // Allocate the result only if the response contains exactly the expected content
-        result = SOPC_Malloc(sizeof(*result));
-        SOPC_ASSERT(NULL != result);
-        SOPC_DataValue_Copy(result, &response->Results[0]);
-    }
-    OpcUa_ReadResponse_Clear(response);
-    SOPC_Free(response);
-    return result;
-}
+// static SOPC_DataValue* Server_LocalReadSingleNode(const SOPC_NodeId* pNid)
+// {
+//     OpcUa_ReadRequest* request = SOPC_ReadRequest_Create(1, OpcUa_TimestampsToReturn_Neither);
+//     OpcUa_ReadResponse* response = NULL;
+//     SOPC_ASSERT(NULL != request);
+//
+//     SOPC_ReturnStatus status;
+//     status = SOPC_ReadRequest_SetReadValue(request, 0, pNid, SOPC_AttributeId_Value, NULL);
+//     if (status != SOPC_STATUS_OK)
+//     {
+//         LOG_WARNING("Read Value failed with code  %d", status);
+//         SOPC_Free(request);
+//         return NULL;
+//     }
+//
+//     // TODO: this obviously doesn't work, as there is no server running
+//     //       maybe connect to a different server, which is running the config,
+//     //       or pull in a minimal server config
+//     //       or use the "cache" to store the required node ids (initialization tbd.)
+//     //
+//     // status = SOPC_ClientCommon_Connect(const SOPC_LibSub_ConfigurationId cfgId, SOPC_LibSub_ConnectionId* pCliId);
+//
+//     status = SOPC_ServerHelper_LocalServiceSync(request, (void**) &response);
+//     if (status != SOPC_STATUS_OK)
+//     {
+//         LOG_WARNING("Read Value failed with code  %d", status);
+//         SOPC_ASSERT(NULL == response);
+//         SOPC_Free(request);
+//         return NULL;
+//     }
+//
+//     SOPC_DataValue* result = NULL;
+//     if (response != NULL && response->NoOfResults == 1)
+//     {
+//         // Allocate the result only if the response contains exactly the expected content
+//         result = SOPC_Malloc(sizeof(*result));
+//         SOPC_ASSERT(NULL != result);
+//         SOPC_DataValue_Copy(result, &response->Results[0]);
+//     }
+//     OpcUa_ReadResponse_Clear(response);
+//     SOPC_Free(response);
+//     return result;
+// }
 
 /***************************************************/
 static void clearPubSub(void)
@@ -283,16 +283,20 @@ static void setupPubSub(void)
     Cache_Initialize(pPubSubConfig, true);
 }
 
-typedef struct _RawMeasurement {
-    int32_t x;
-    int32_t y;
-    int32_t z;
-} RawMeasurement;
+// typedef struct _RawMeasurement {
+//     int32_t x;
+//     int32_t y;
+//     int32_t z;
+// } RawMeasurement;
 
-RawMeasurement measurement_buffer[10];
+// RawMeasurement measurement_buffer[10];
+int32_t measurement_buffer_x[10];
+int32_t measurement_buffer_y[10];
+int32_t measurement_buffer_z[10];
 int32_t measurement_count = 0;
 
-static SOPC_ReturnStatus write_batch(RawMeasurement* batch, int32_t count);
+static SOPC_ReturnStatus write_batch(int32_t* batch, int32_t count, char* node_id);
+static SOPC_ReturnStatus write_int_value(int32_t value, char* node_id);
 /***************************************************/
 void SOPC_Platform_Main(void)
 {
@@ -393,15 +397,23 @@ void SOPC_Platform_Main(void)
         val_mv = buf;
         err = adc_raw_to_millivolts_dt(&adc_channels[0], &val_mv);
 
-        measurement_buffer[measurement_count++] = (RawMeasurement) {
-            .x = val_mv,
-            .y = val_mv & 0xAAAAAAAA,
-            .z = val_mv & 0x55555555,
-        };
-        if (measurement_count >= ARRAY_SIZE(measurement_buffer)) {
-            write_batch(measurement_buffer, ARRAY_SIZE(measurement_buffer));
+        measurement_buffer_x[measurement_count] = val_mv ;
+        measurement_buffer_y[measurement_count] = val_mv &0xAAAAAAAA;
+        measurement_buffer_z[measurement_count] = val_mv &0x55555555;
+        
+        if (measurement_count++ > ARRAY_SIZE(measurement_buffer_x)) {
+            write_batch(measurement_buffer_x, ARRAY_SIZE(measurement_buffer_x), "ns=2;s=RawBatch10_X_Array");
+            write_batch(measurement_buffer_y, ARRAY_SIZE(measurement_buffer_y), "ns=2;s=RawBatch10_Y_Array");
+            write_batch(measurement_buffer_z, ARRAY_SIZE(measurement_buffer_z),"ns=2;s=RawBatch10_Z_Array");
+            
+
+            write_int_value(val_mv, "ns=2;s=RawSingleSample_X");
+            write_int_value(val_mv & 0xAAAAAAAA, "ns=2;s=RawSingleSample_Y");
+            write_int_value(val_mv & 0x55555555, "ns=2;s=RawSingleSample_Z");
+
             measurement_count = 0;
         }
+
 
         // printf(" = %" PRId32 " mV\n", val_mv);
         //adc = (double) val_mv / 1000;
@@ -420,7 +432,7 @@ void SOPC_Platform_Main(void)
         //write_overflow_warning(tank_level);
         //write_underflow_warning(tank_level);
 
-        update_publisher();
+        //update_publisher();
     }
 
     SOPC_Atomic_Int_Set(&gStopped, 1);
@@ -438,43 +450,63 @@ void SOPC_Platform_Main(void)
 }
 
 /***************************************************/
-static SOPC_ReturnStatus write_batch(RawMeasurement* batch, int32_t count)
+static SOPC_ReturnStatus write_batch(int32_t* batch, int32_t count, char* node_id)
 {
     SOPC_NodeId nid;
-    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid, "ns=2;i=6067", (int32_t) 11);
+    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid, node_id, (int32_t) strlen(node_id));
     SOPC_ASSERT(SOPC_STATUS_OK == status);
-
+    
     SOPC_DataValue dv;
     SOPC_DataValue_Initialize(&dv);
     dv.Value.ArrayType = SOPC_VariantArrayType_Array;
     dv.Value.DoNotClear = false;
     dv.Value.BuiltInTypeId = SOPC_Int32_Id;
     dv.Value.Value.Array.Length = count;
-    dv.Value.Value.Array.Content.Int32Arr = (int32_t*)batch;
+    dv.Value.Value.Array.Content.Int32Arr = (int32_t *)batch;
 
     cacheSync_WriteToCache(&nid, &dv);
     return SOPC_STATUS_OK;
 }
 
-//static int write_double_value(double value, char* node_id)
-//{
+
+// static int write_int32_arr(int32_t * values, int32_t count, char* node_id)
+// {
 //    SOPC_NodeId nid;
 //    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid, node_id, (int32_t) strlen(node_id));
 //    SOPC_ASSERT(SOPC_STATUS_OK == status);
 //    SOPC_DataValue dv;
 //    SOPC_DataValue_Initialize(&dv);
 //
-//    dv.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+//    dv.Value.ArrayType = SOPC_VariantArrayType_Array;
 //    dv.Value.DoNotClear = false;
-//    dv.Value.BuiltInTypeId = SOPC_Double_Id;
-//    dv.Value.Value.Doublev = value;
+//    dv.Value.BuiltInTypeId = SOPC_Int32_Id; 
+//    dv.Value.Value.Array.Content.Int32Arr = values;
+//    dv.Value.Value.Array.Length = count;
 //
-//    Server_LocalWriteSingleNode(&nid, &dv);
-//
+//    cacheSync_WriteToCache(&nid, &dv);
 //    SOPC_NodeId_Clear(&nid);
 //    SOPC_DataValue_Clear(&dv);
 //    return 0;
-//}
+// }
+
+static SOPC_ReturnStatus write_int_value(int32_t value, char* node_id)
+{
+   SOPC_NodeId nid;
+   SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid, node_id, (int32_t) strlen(node_id));
+   SOPC_ASSERT(SOPC_STATUS_OK == status);
+   SOPC_DataValue dv;
+   SOPC_DataValue_Initialize(&dv);
+
+   dv.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+   dv.Value.DoNotClear = false;
+   dv.Value.BuiltInTypeId = SOPC_Int32_Id;
+   dv.Value.Value.Int32 = value;
+
+   cacheSync_WriteToCache(&nid, &dv);
+   SOPC_NodeId_Clear(&nid);
+   SOPC_DataValue_Clear(&dv);
+   return SOPC_STATUS_OK;
+}
 //
 //static int write_bool_value(bool value, char* node_id)
 //{
@@ -591,54 +623,54 @@ static SOPC_ReturnStatus write_batch(RawMeasurement* batch, int32_t count)
 //    return 0;
 //}
 
-static int update_publisher(void)
-{
-    char nID_char_PubSubStartStop[23] = "ns=1;s=PubSubStartStop";
-
-    SOPC_NodeId nid_read;
-    SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid_read, nID_char_PubSubStartStop,
-                                                                 (int32_t) strlen(nID_char_PubSubStartStop));
-    SOPC_ASSERT(SOPC_STATUS_OK == status);
-    SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
-    if (NULL == dv_read)
-    {
-        PRINT("Failed to read node '%s'\n", nID_char_PubSubStartStop);
-        SOPC_NodeId_Clear(&nid_read);
-        return 1;
-    }
-
-    /* only execute on change! The functions start and stop threads...*/
-    if (value_PubSubStartStop != dv_read->Value.Value.Byte)
-    {
-        if (1 == dv_read->Value.Value.Byte)
-        {
-            // start publisher (will fail if already started)
-            bool bResult;
-            bResult = SOPC_PubScheduler_Start(pPubSubConfig, pSourceConfig, CONFIG_SOPC_PUBLISHER_PRIORITY);
-            if (!bResult)
-            {
-                PRINT("\r\nFailed to start Publisher!\r\n");
-                return 1;
-            }
-            else
-            {
-                gPubStarted = true;
-                PRINT("\r\nPublisher started\r\n");
-                return 0;
-            }
-        }
-        if (0 == dv_read->Value.Value.Byte)
-        {
-            SOPC_PubScheduler_Stop();
-            gPubStarted = false;
-            return 0;
-        }
-    }
-
-    value_PubSubStartStop = dv_read->Value.Value.Byte;
-
-    SOPC_NodeId_Clear(&nid_read);
-    SOPC_DataValue_Clear(dv_read);
-    SOPC_Free(dv_read);
-    return 0;
-}
+// static int update_publisher(void)
+// {
+//     char nID_char_PubSubStartStop[23] = "ns=1;s=PubSubStartStop";
+//
+//     SOPC_NodeId nid_read;
+//     SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid_read, nID_char_PubSubStartStop,
+//                                                                  (int32_t) strlen(nID_char_PubSubStartStop));
+//     SOPC_ASSERT(SOPC_STATUS_OK == status);
+//     SOPC_DataValue* dv_read = Server_LocalReadSingleNode(&nid_read);
+//     if (NULL == dv_read)
+//     {
+//         PRINT("Failed to read node '%s'\n", nID_char_PubSubStartStop);
+//         SOPC_NodeId_Clear(&nid_read);
+//         return 1;
+//     }
+//
+//     /* only execute on change! The functions start and stop threads...*/
+//     if (value_PubSubStartStop != dv_read->Value.Value.Byte)
+//     {
+//         if (1 == dv_read->Value.Value.Byte)
+//         {
+//             // start publisher (will fail if already started)
+//             bool bResult;
+//             bResult = SOPC_PubScheduler_Start(pPubSubConfig, pSourceConfig, CONFIG_SOPC_PUBLISHER_PRIORITY);
+//             if (!bResult)
+//             {
+//                 PRINT("\r\nFailed to start Publisher!\r\n");
+//                 return 1;
+//             }
+//             else
+//             {
+//                 gPubStarted = true;
+//                 PRINT("\r\nPublisher started\r\n");
+//                 return 0;
+//             }
+//         }
+//         if (0 == dv_read->Value.Value.Byte)
+//         {
+//             SOPC_PubScheduler_Stop();
+//             gPubStarted = false;
+//             return 0;
+//         }
+//     }
+//
+//     value_PubSubStartStop = dv_read->Value.Value.Byte;
+//
+//     SOPC_NodeId_Clear(&nid_read);
+//     SOPC_DataValue_Clear(dv_read);
+//     SOPC_Free(dv_read);
+//     return 0;
+// }

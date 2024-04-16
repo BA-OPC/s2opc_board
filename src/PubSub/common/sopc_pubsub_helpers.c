@@ -223,7 +223,7 @@ static bool SOPC_ArrayDimensions_isCompatible(const SOPC_PubSub_ArrayDimension* 
             {
                 // Array dimension equal to zero means no up boundary
                 const uint32_t dimI = dest_arrayDimensions->arrayDimensions[i];
-                res = ((dimI == 0) || (src_variant->Value.Matrix.ArrayDimensions[i] <= (int32_t) dimI));
+                res = ((dimI == 0) || (src_variant->Value.Array.Length <= (int32_t) dimI));
             }
         }
         else
