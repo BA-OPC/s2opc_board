@@ -1,0 +1,892 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UANodeSet xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:uax="http://opcfoundation.org/UA/2008/02/Types.xsd" xmlns="http://opcfoundation.org/UA/2011/03/UANodeSet.xsd" xmlns:s1="http://stl-gmbh.de/DxDm_sensor/Types.xsd" xmlns:s2="http://opcfoundation.org/UA/DI/Types.xsd" xmlns:ua="http://unifiedautomation.com/Configuration/NodeSet.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <NamespaceUris>
+        <Uri>http://stl-gmbh.de/DxDm_sensor/</Uri>
+        <Uri>http://opcfoundation.org/UA/DI/</Uri>
+    </NamespaceUris>
+    <Models>
+        <Model ModelUri="http://stl-gmbh.de/DxDm_sensor/" PublicationDate="2024-04-04T06:21:32Z" Version="1.0.1">
+            <RequiredModel ModelUri="http://opcfoundation.org/UA/" PublicationDate="2022-11-01T00:00:00Z" Version="1.05.02"/>
+            <RequiredModel ModelUri="http://opcfoundation.org/UA/DI/" PublicationDate="2022-11-03T00:00:00Z" Version="1.04.0"/>
+        </Model>
+    </Models>
+    <Aliases>
+        <Alias Alias="Boolean">i=1</Alias>
+        <Alias Alias="UInt16">i=5</Alias>
+        <Alias Alias="Int32">i=6</Alias>
+        <Alias Alias="Double">i=11</Alias>
+        <Alias Alias="String">i=12</Alias>
+        <Alias Alias="DateTime">i=13</Alias>
+        <Alias Alias="ByteString">i=15</Alias>
+        <Alias Alias="LocalizedText">i=21</Alias>
+        <Alias Alias="Organizes">i=35</Alias>
+        <Alias Alias="HasModellingRule">i=37</Alias>
+        <Alias Alias="HasTypeDefinition">i=40</Alias>
+        <Alias Alias="HasSubtype">i=45</Alias>
+        <Alias Alias="HasProperty">i=46</Alias>
+        <Alias Alias="HasComponent">i=47</Alias>
+        <Alias Alias="IdType">i=256</Alias>
+        <Alias Alias="NumericRange">i=291</Alias>
+        <Alias Alias="UtcTime">i=294</Alias>
+        <Alias Alias="PublishedVariableDataType">i=14273</Alias>
+        <Alias Alias="DataSetMetaDataType">i=14523</Alias>
+        <Alias Alias="ConfigurationVersionDataType">i=14593</Alias>
+        <Alias Alias="AssociatedWith">i=24137</Alias>
+        <Alias Alias="SemanticVersionString">i=24263</Alias>
+        <Alias Alias="DeviceHealthEnumeration">ns=2;i=6244</Alias>
+    </Aliases>
+    <Extensions>
+        <Extension>
+            <ua:ModelInfo Tool="UaModeler" Hash="tjoSkdk5yR2MbXZVizQ9hg==" Version="1.6.10"/>
+        </Extension>
+    </Extensions>
+    <UAVariable SymbolicName="TypeDictionary_BinarySchema" DataType="ByteString" NodeId="ns=1;i=6014" BrowseName="1:TypeDictionary">
+        <DisplayName>TypeDictionary</DisplayName>
+        <Description>Collects the data type descriptions of http://stl-gmbh.de/DxDm_sensor/</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=72</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6015</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">i=93</Reference>
+        </References>
+        <Value>
+            <uax:ByteString>PG9wYzpUeXBlRGljdGlvbmFyeSB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZ
+        W1hLWluc3RhbmNlIiB4bWxuczp0bnM9Imh0dHA6Ly9zdGwtZ21iaC5kZS9EeERtX3NlbnNvc
+        i8iIERlZmF1bHRCeXRlT3JkZXI9IkxpdHRsZUVuZGlhbiIgeG1sbnM6b3BjPSJodHRwOi8vb
+        3BjZm91bmRhdGlvbi5vcmcvQmluYXJ5U2NoZW1hLyIgeG1sbnM6dWE9Imh0dHA6Ly9vcGNmb
+        3VuZGF0aW9uLm9yZy9VQS8iIFRhcmdldE5hbWVzcGFjZT0iaHR0cDovL3N0bC1nbWJoLmRlL
+        0R4RG1fc2Vuc29yLyI+CiA8b3BjOkltcG9ydCBOYW1lc3BhY2U9Imh0dHA6Ly9vcGNmb3VuZ
+        GF0aW9uLm9yZy9VQS8iLz4KPC9vcGM6VHlwZURpY3Rpb25hcnk+Cg==</uax:ByteString>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="String" ParentNodeId="ns=1;i=6014" NodeId="ns=1;i=6015" BrowseName="NamespaceUri">
+        <DisplayName>NamespaceUri</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=6014</Reference>
+        </References>
+        <Value>
+            <uax:String>http://stl-gmbh.de/DxDm_sensor/</uax:String>
+        </Value>
+    </UAVariable>
+    <UAVariable SymbolicName="TypeDictionary_XmlSchema" DataType="ByteString" NodeId="ns=1;i=6016" BrowseName="1:TypeDictionary">
+        <DisplayName>TypeDictionary</DisplayName>
+        <Description>Collects the data type descriptions of http://stl-gmbh.de/DxDm_sensor/</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=72</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6017</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">i=92</Reference>
+        </References>
+        <Value>
+            <uax:ByteString>PHhzOnNjaGVtYSBlbGVtZW50Rm9ybURlZmF1bHQ9InF1YWxpZmllZCIgdGFyZ2V0TmFtZXNwYWNlPSJod
+        HRwOi8vc3RsLWdtYmguZGUvRHhEbV9zZW5zb3IvVHlwZXMueHNkIiB4bWxuczp0bnM9Imh0d
+        HA6Ly9zdGwtZ21iaC5kZS9EeERtX3NlbnNvci9UeXBlcy54c2QiIHhtbG5zOnVhPSJodHRwO
+        i8vb3BjZm91bmRhdGlvbi5vcmcvVUEvMjAwOC8wMi9UeXBlcy54c2QiIHhtbG5zOnhzPSJod
+        HRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYSI+CiA8eHM6aW1wb3J0IG5hbWVzcGFjZ
+        T0iaHR0cDovL29wY2ZvdW5kYXRpb24ub3JnL1VBLzIwMDgvMDIvVHlwZXMueHNkIi8+Cjwve
+        HM6c2NoZW1hPgo=</uax:ByteString>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="String" ParentNodeId="ns=1;i=6016" NodeId="ns=1;i=6017" BrowseName="NamespaceUri">
+        <DisplayName>NamespaceUri</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=6016</Reference>
+        </References>
+        <Value>
+            <uax:String>http://stl-gmbh.de/DxDm_sensor/Types.xsd</uax:String>
+        </Value>
+    </UAVariable>
+    <UAObjectType NodeId="ns=1;i=1003" BrowseName="1:DxDmSensorType">
+        <DisplayName>DxDmSensorType</DisplayName>
+        <Description>STL GmbH 3D DxDm Flux Sensor</Description>
+        <References>
+            <Reference ReferenceType="HasComponent">ns=1;i=5009</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=5001</Reference>
+            <Reference ReferenceType="HasSubtype" IsForward="false">ns=2;i=1002</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=5010</Reference>
+        </References>
+    </UAObjectType>
+    <UAObject SymbolicName="ASCII_Info" ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5009" BrowseName="1:ASCII Info">
+        <DisplayName>ASCII Info</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=61</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6023</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6024</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6025</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6026</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6027</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6028</Reference>
+            <Reference ReferenceType="Organizes">ns=2;i=6001</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6029</Reference>
+        </References>
+    </UAObject>
+    <UAVariable SymbolicName="ADC_Wert_vom_Biasstromabgleich" DataType="String" ParentNodeId="ns=1;i=5009" NodeId="ns=1;i=6023" BrowseName="1:ADC-Wert vom Biasstromabgleich" AccessLevel="3">
+        <DisplayName>ADC-Wert vom Biasstromabgleich</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5009</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable SymbolicName="Debug_Info" DataType="String" ParentNodeId="ns=1;i=5009" NodeId="ns=1;i=6024" BrowseName="1:Debug-Info" AccessLevel="3">
+        <DisplayName>Debug-Info</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5009</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable SymbolicName="Firmware_Version_L1_Platine" DataType="SemanticVersionString" ParentNodeId="ns=1;i=5009" NodeId="ns=1;i=6025" BrowseName="1:Firmware Version L1-Platine" AccessLevel="3">
+        <DisplayName>Firmware Version L1-Platine</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5009</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="SemanticVersionString" ParentNodeId="ns=1;i=5009" NodeId="ns=1;i=6026" BrowseName="1:Firmware_Version_L2_Platine" AccessLevel="3">
+        <DisplayName>Firmware_Version_L2_Platine</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5009</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable SymbolicName="FullScale_Information" DataType="String" ParentNodeId="ns=1;i=5009" NodeId="ns=1;i=6027" BrowseName="1:FullScale Information" AccessLevel="3">
+        <DisplayName>FullScale Information</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5009</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable SymbolicName="optional_TempA___TempB" DataType="String" ParentNodeId="ns=1;i=5009" NodeId="ns=1;i=6028" BrowseName="1:optional TempA + TempB" AccessLevel="3">
+        <DisplayName>optional TempA + TempB</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5009</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable SymbolicName="Skalierungs_Information" DataType="String" ParentNodeId="ns=1;i=5009" NodeId="ns=1;i=6029" BrowseName="1:Skalierungs-Information" AccessLevel="3">
+        <DisplayName>Skalierungs-Information</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5009</Reference>
+        </References>
+    </UAVariable>
+    <UAObject ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5001" BrowseName="1:Calibration_And_Scaling">
+        <DisplayName>Calibration_And_Scaling</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=61</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6053</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6054</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6055</Reference>
+        </References>
+    </UAObject>
+    <UAVariable DataType="Double" ParentNodeId="ns=1;i=5001" NodeId="ns=1;i=6053" BrowseName="1:FluxX_TeslaPerBit" AccessLevel="3">
+        <DisplayName>FluxX_TeslaPerBit</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5001</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="Double" ParentNodeId="ns=1;i=5001" NodeId="ns=1;i=6054" BrowseName="1:FluxY_TeslaPerBit" AccessLevel="3">
+        <DisplayName>FluxY_TeslaPerBit</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5001</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="Double" ParentNodeId="ns=1;i=5001" NodeId="ns=1;i=6055" BrowseName="1:FluxZ_TeslaPerBit" AccessLevel="3">
+        <DisplayName>FluxZ_TeslaPerBit</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5001</Reference>
+        </References>
+    </UAVariable>
+    <UAObject SymbolicName="L1_ADC_raw" ParentNodeId="ns=1;i=1003" NodeId="ns=1;i=5010" BrowseName="1:L1-ADC raw">
+        <DisplayName>L1-ADC raw</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=61</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=1003</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6037</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6039</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6041</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6042</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6040</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6043</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6044</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;i=6045</Reference>
+        </References>
+    </UAObject>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;i=5010" NodeId="ns=1;i=6037" BrowseName="1:Minus_03V_Versorgung" AccessLevel="3">
+        <DisplayName>Minus_03V_Versorgung</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5010</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;i=5010" NodeId="ns=1;i=6039" BrowseName="1:Minus_06V_Versorgung" AccessLevel="3">
+        <DisplayName>Minus_06V_Versorgung</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5010</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;i=5010" NodeId="ns=1;i=6041" BrowseName="1:Plus_03V_Versorgung" AccessLevel="3">
+        <DisplayName>Plus_03V_Versorgung</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5010</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;i=5010" NodeId="ns=1;i=6042" BrowseName="1:Plus_06V_Versorgung" AccessLevel="3">
+        <DisplayName>Plus_06V_Versorgung</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5010</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;i=5010" NodeId="ns=1;i=6040" BrowseName="1:Plus_12V_Versorgung" AccessLevel="3">
+        <DisplayName>Plus_12V_Versorgung</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5010</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;i=5010" NodeId="ns=1;i=6043" BrowseName="1:VCCIO_Versorgung" AccessLevel="3">
+        <DisplayName>VCCIO_Versorgung</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5010</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;i=5010" NodeId="ns=1;i=6044" BrowseName="1:Versorgungsstrom" AccessLevel="3">
+        <DisplayName>Versorgungsstrom</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5010</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;i=5010" NodeId="ns=1;i=6045" BrowseName="1:Vext" AccessLevel="3">
+        <DisplayName>Vext</DisplayName>
+        <References>
+            <Reference ReferenceType="HasModellingRule">i=78</Reference>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;i=5010</Reference>
+        </References>
+    </UAVariable>
+    <UAObject NodeId="ns=1;s=DxDmSensor" BrowseName="1:DxDmSensor">
+        <DisplayName>DxDmSensor</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">ns=1;i=1003</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=ASCII Info</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=AssetId</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=CalibrationFolder</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=DxDmSensorComponentName</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=DxDmSensorHealth</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=DxDmManualLink</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=DxDmSensorDeviceRev</Reference>
+            <Reference ReferenceType="Organizes" IsForward="false">ns=2;i=6094</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=DxDmSensorHardwareRev</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=DxDmSensorIdentificationFolder</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=DxDMSensor L1-ADC Folder</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=DxDmManufacturer</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=DxDmManufacturerUri</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=DxDmModelName</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=DxDmProtocolSupport</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=DxDmRevisionCounter</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=DxDmSensorSerialNo</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=DxDmSoftwareRev</Reference>
+        </References>
+    </UAObject>
+    <UAObject SymbolicName="ASCII_Info" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=ASCII Info" BrowseName="1:ASCII Info">
+        <DisplayName>ASCII Info</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=61</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=ADC Bias</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=DebugInfo</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=FW L1</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=FW L2</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=Fullscale</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=TempAB</Reference>
+            <Reference ReferenceType="Organizes">ns=1;s=DxDmSensorSerialNo</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=Skalierung</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+    </UAObject>
+    <UAVariable SymbolicName="ADC_Wert_vom_Biasstromabgleich" DataType="String" ParentNodeId="ns=1;s=ASCII Info" NodeId="ns=1;s=ADC Bias" BrowseName="1:ADC-Wert vom Biasstromabgleich" AccessLevel="3">
+        <DisplayName>ADC-Wert vom Biasstromabgleich</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=ASCII Info</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable SymbolicName="Debug_Info" DataType="String" ParentNodeId="ns=1;s=ASCII Info" NodeId="ns=1;s=DebugInfo" BrowseName="1:Debug-Info" AccessLevel="3">
+        <DisplayName>Debug-Info</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=ASCII Info</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable SymbolicName="Firmware_Version_L1_Platine" DataType="SemanticVersionString" ParentNodeId="ns=1;s=ASCII Info" NodeId="ns=1;s=FW L1" BrowseName="1:Firmware Version L1-Platine" AccessLevel="3">
+        <DisplayName>Firmware Version L1-Platine</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=ASCII Info</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="SemanticVersionString" ParentNodeId="ns=1;s=ASCII Info" NodeId="ns=1;s=FW L2" BrowseName="1:Firmware_Version_L2_Platine" AccessLevel="3">
+        <DisplayName>Firmware_Version_L2_Platine</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=ASCII Info</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable SymbolicName="FullScale_Information" DataType="String" ParentNodeId="ns=1;s=ASCII Info" NodeId="ns=1;s=Fullscale" BrowseName="1:FullScale Information" AccessLevel="3">
+        <DisplayName>FullScale Information</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=ASCII Info</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable SymbolicName="optional_TempA___TempB" DataType="String" ParentNodeId="ns=1;s=ASCII Info" NodeId="ns=1;s=TempAB" BrowseName="1:optional TempA + TempB" AccessLevel="3">
+        <DisplayName>optional TempA + TempB</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=ASCII Info</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="String" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmSensorSerialNo" BrowseName="2:SerialNumber">
+        <DisplayName>SerialNumber</DisplayName>
+        <Description>Identifier that uniquely identifies, within a manufacturer, a device instance</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="Organizes" IsForward="false">ns=1;s=ASCII Info</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable SymbolicName="Skalierungs_Information" DataType="String" ParentNodeId="ns=1;s=ASCII Info" NodeId="ns=1;s=Skalierung" BrowseName="1:Skalierungs-Information" AccessLevel="3">
+        <DisplayName>Skalierungs-Information</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=ASCII Info</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="String" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=AssetId" BrowseName="2:AssetId">
+        <DisplayName>AssetId</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+    </UAVariable>
+    <UAObject ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=CalibrationFolder" BrowseName="1:Calibration_And_Scaling">
+        <DisplayName>Calibration_And_Scaling</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=61</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=FluxSkalierung_X</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=FluxSkalierung_Y</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=FluxSkalierung_Z</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDmSensor</Reference>
+            <Reference ReferenceType="AssociatedWith" IsForward="false">ns=1;s=RawSingleSample</Reference>
+        </References>
+    </UAObject>
+    <UAVariable DataType="Double" ParentNodeId="ns=1;s=CalibrationFolder" NodeId="ns=1;s=FluxSkalierung_X" BrowseName="1:FluxX_TeslaPerBit" AccessLevel="3">
+        <DisplayName>FluxX_TeslaPerBit</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=CalibrationFolder</Reference>
+        </References>
+        <Value>
+            <uax:Double>0.11111</uax:Double>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="Double" ParentNodeId="ns=1;s=CalibrationFolder" NodeId="ns=1;s=FluxSkalierung_Y" BrowseName="1:FluxY_TeslaPerBit" AccessLevel="3">
+        <DisplayName>FluxY_TeslaPerBit</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=CalibrationFolder</Reference>
+        </References>
+        <Value>
+            <uax:Double>0.22222</uax:Double>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="Double" ParentNodeId="ns=1;s=CalibrationFolder" NodeId="ns=1;s=FluxSkalierung_Z" BrowseName="1:FluxZ_TeslaPerBit" AccessLevel="3">
+        <DisplayName>FluxZ_TeslaPerBit</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=CalibrationFolder</Reference>
+        </References>
+        <Value>
+            <uax:Double>0.33333</uax:Double>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="LocalizedText" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmSensorComponentName" BrowseName="2:ComponentName">
+        <DisplayName>ComponentName</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+        <Value>
+            <uax:LocalizedText>
+                <uax:Text>DxDm MegaSensor </uax:Text>
+            </uax:LocalizedText>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="DeviceHealthEnumeration" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmSensorHealth" BrowseName="2:DeviceHealth">
+        <DisplayName>DeviceHealth</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="String" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmManualLink" BrowseName="2:DeviceManual">
+        <DisplayName>DeviceManual</DisplayName>
+        <Description>Address (pathname in the file system or a URL | Web address) of user manual for the device</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+        <Value>
+            <uax:String>https://www.stl-gmbh.de/fileadmin/user_upload/www.stl-gmbh.de/DM-050_Data_Sheet.pdf</uax:String>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="String" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmSensorDeviceRev" BrowseName="2:DeviceRevision">
+        <DisplayName>DeviceRevision</DisplayName>
+        <Description>Overall revision level of the device</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="String" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmSensorHardwareRev" BrowseName="2:HardwareRevision">
+        <DisplayName>HardwareRevision</DisplayName>
+        <Description>Revision level of the hardware of the device</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+    </UAVariable>
+    <UAObject ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmSensorIdentificationFolder" BrowseName="2:Identification">
+        <DisplayName>Identification</DisplayName>
+        <Description>Used to organize parameters for identification of this TopologyElement</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">ns=2;i=1005</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+    </UAObject>
+    <UAObject SymbolicName="L1_ADC_raw" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDMSensor L1-ADC Folder" BrowseName="1:L1-ADC raw">
+        <DisplayName>L1-ADC raw</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=61</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=Minus3V</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=Minus6V</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=Plus3V</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=Plus6V</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=Plus12V</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=VCCIO</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=I Versorgung</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=V ext</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+    </UAObject>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;s=DxDMSensor L1-ADC Folder" NodeId="ns=1;s=Minus3V" BrowseName="1:Minus_03V_Versorgung" AccessLevel="3">
+        <DisplayName>Minus_03V_Versorgung</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDMSensor L1-ADC Folder</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;s=DxDMSensor L1-ADC Folder" NodeId="ns=1;s=Minus6V" BrowseName="1:Minus_06V_Versorgung" AccessLevel="3">
+        <DisplayName>Minus_06V_Versorgung</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDMSensor L1-ADC Folder</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;s=DxDMSensor L1-ADC Folder" NodeId="ns=1;s=Plus3V" BrowseName="1:Plus_03V_Versorgung" AccessLevel="3">
+        <DisplayName>Plus_03V_Versorgung</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDMSensor L1-ADC Folder</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;s=DxDMSensor L1-ADC Folder" NodeId="ns=1;s=Plus6V" BrowseName="1:Plus_06V_Versorgung" AccessLevel="3">
+        <DisplayName>Plus_06V_Versorgung</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDMSensor L1-ADC Folder</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;s=DxDMSensor L1-ADC Folder" NodeId="ns=1;s=Plus12V" BrowseName="1:Plus_12V_Versorgung" AccessLevel="3">
+        <DisplayName>Plus_12V_Versorgung</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDMSensor L1-ADC Folder</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;s=DxDMSensor L1-ADC Folder" NodeId="ns=1;s=VCCIO" BrowseName="1:VCCIO_Versorgung" AccessLevel="3">
+        <DisplayName>VCCIO_Versorgung</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDMSensor L1-ADC Folder</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;s=DxDMSensor L1-ADC Folder" NodeId="ns=1;s=I Versorgung" BrowseName="1:Versorgungsstrom" AccessLevel="3">
+        <DisplayName>Versorgungsstrom</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDMSensor L1-ADC Folder</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="UInt16" ParentNodeId="ns=1;s=DxDMSensor L1-ADC Folder" NodeId="ns=1;s=V ext" BrowseName="1:Vext" AccessLevel="3">
+        <DisplayName>Vext</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDMSensor L1-ADC Folder</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="LocalizedText" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmManufacturer" BrowseName="2:Manufacturer">
+        <DisplayName>Manufacturer</DisplayName>
+        <Description>Name of the company that manufactured the device</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+        <Value>
+            <uax:LocalizedText>
+                <uax:Text>STL Systems AG</uax:Text>
+            </uax:LocalizedText>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="String" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmManufacturerUri" BrowseName="2:ManufacturerUri">
+        <DisplayName>ManufacturerUri</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+        <Value>
+            <uax:String>https://www.stl-gmbh.de/en/products/product/product/low-field-magnetometer/</uax:String>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="LocalizedText" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmModelName" BrowseName="2:Model">
+        <DisplayName>Model</DisplayName>
+        <Description>Model name of the device</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+        <Value>
+            <uax:LocalizedText>
+                <uax:Text>DM-050-3Axis</uax:Text>
+            </uax:LocalizedText>
+        </Value>
+    </UAVariable>
+    <UAObject ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmProtocolSupport" BrowseName="2:ProtocolSupport">
+        <DisplayName>ProtocolSupport</DisplayName>
+        <Description>Protocol-specific files for the device.</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=61</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=DxDmProtocolSupportIdentifier</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+    </UAObject>
+    <UAVariable DataType="ByteString" ParentNodeId="ns=1;s=DxDmProtocolSupport" NodeId="ns=1;s=DxDmProtocolSupportIdentifier" BrowseName="2:ProtocolSupportIdentifier">
+        <DisplayName>ProtocolSupportIdentifier</DisplayName>
+        <Description>A protocol-specific file for the device.</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=DxDmProtocolSupport</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="Int32" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmRevisionCounter" BrowseName="2:RevisionCounter">
+        <DisplayName>RevisionCounter</DisplayName>
+        <Description>An incremental counter indicating the number of times the static data within the Device has been modified</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="SemanticVersionString" ParentNodeId="ns=1;s=DxDmSensor" NodeId="ns=1;s=DxDmSoftwareRev" BrowseName="2:SoftwareRevision">
+        <DisplayName>SoftwareRevision</DisplayName>
+        <Description>Revision level of the software/firmware of the device</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=DxDmSensor</Reference>
+        </References>
+        <Value>
+            <uax:String></uax:String>
+        </Value>
+    </UAVariable>
+    <UAObject NodeId="ns=1;s=DxDmSensorMeasurements" BrowseName="1:DxDmSensorMeasurements">
+        <DisplayName>DxDmSensorMeasurements</DisplayName>
+        <Description>DxDm Sensor Measurements</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=61</Reference>
+            <Reference ReferenceType="Organizes" IsForward="false">i=85</Reference>
+            <Reference ReferenceType="Organizes">ns=1;s=RawBatch10</Reference>
+            <Reference ReferenceType="Organizes">ns=1;s=RawSingleSample</Reference>
+        </References>
+    </UAObject>
+    <UAObject NodeId="ns=1;s=RawBatch10" BrowseName="1:RawBatch10Samples">
+        <DisplayName>RawBatch10Samples</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=58</Reference>
+            <Reference ReferenceType="Organizes" IsForward="false">ns=1;s=DxDmSensorMeasurements</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=RawBatch10_Time</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=RawBatch10_X_Array</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=RawBatch10_Y_Array</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=RawBatch10_Z_Array</Reference>
+        </References>
+    </UAObject>
+    <UAVariable DataType="UtcTime" NodeId="ns=1;s=RawBatch10_Time" BrowseName="1:TimeFirstSample" AccessLevel="3">
+        <DisplayName>TimeFirstSample</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=RawBatch10</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable SymbolicName="X_Array" DataType="Int32" ValueRank="1" NodeId="ns=1;s=RawBatch10_X_Array" ArrayDimensions="10" BrowseName="1:X-Array" AccessLevel="3">
+        <DisplayName>X-Array</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=RawBatch10</Reference>
+        </References>
+        <Value>
+            <uax:ListOfInt32>
+                <uax:Int32>0</uax:Int32>
+                <uax:Int32>1</uax:Int32>
+                <uax:Int32>2</uax:Int32>
+                <uax:Int32>3</uax:Int32>
+                <uax:Int32>4</uax:Int32>
+                <uax:Int32>5</uax:Int32>
+                <uax:Int32>6</uax:Int32>
+                <uax:Int32>7</uax:Int32>
+                <uax:Int32>8</uax:Int32>
+                <uax:Int32>9</uax:Int32>
+            </uax:ListOfInt32>
+        </Value>
+    </UAVariable>
+    <UAVariable SymbolicName="Y_Array" DataType="Int32" NodeId="ns=1;s=RawBatch10_Y_Array" BrowseName="1:Y-Array" AccessLevel="3">
+        <DisplayName>Y-Array</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=RawBatch10</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="Int32" NodeId="ns=1;s=RawBatch10_Z_Array" BrowseName="1:Z_Array" AccessLevel="3">
+        <DisplayName>Z_Array</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=RawBatch10</Reference>
+        </References>
+    </UAVariable>
+    <UAObject NodeId="ns=1;s=RawSingleSample" BrowseName="1:RawSingleSample">
+        <DisplayName>RawSingleSample</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=58</Reference>
+            <Reference ReferenceType="AssociatedWith">ns=1;s=CalibrationFolder</Reference>
+            <Reference ReferenceType="Organizes" IsForward="false">ns=1;s=DxDmSensorMeasurements</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=RawSingleSample_X</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=RawSingleSample_Y</Reference>
+            <Reference ReferenceType="HasComponent">ns=1;s=RawSingleSample_Z</Reference>
+        </References>
+    </UAObject>
+    <UAVariable DataType="Int32" NodeId="ns=1;s=RawSingleSample_X" BrowseName="1:X" AccessLevel="3">
+        <DisplayName>X</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=RawSingleSample</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="Int32" NodeId="ns=1;s=RawSingleSample_Y" BrowseName="1:Y" AccessLevel="3">
+        <DisplayName>Y</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=RawSingleSample</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="Int32" NodeId="ns=1;s=RawSingleSample_Z" BrowseName="1:Z" AccessLevel="3">
+        <DisplayName>Z</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=63</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">ns=1;s=RawSingleSample</Reference>
+        </References>
+    </UAVariable>
+    <UAObject SymbolicName="http___stl_gmbh_de_DxDm_sensor_" NodeId="ns=1;i=5020" BrowseName="1:http://stl-gmbh.de/DxDm_sensor/">
+        <DisplayName>http://stl-gmbh.de/DxDm_sensor/</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=11616</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">i=11715</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6066</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6068</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6069</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6070</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6071</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6072</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;i=6073</Reference>
+        </References>
+    </UAObject>
+    <UAVariable DataType="Boolean" ParentNodeId="ns=1;i=5020" NodeId="ns=1;i=6066" BrowseName="IsNamespaceSubset">
+        <DisplayName>IsNamespaceSubset</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5020</Reference>
+        </References>
+        <Value>
+            <uax:Boolean>false</uax:Boolean>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="DateTime" ParentNodeId="ns=1;i=5020" NodeId="ns=1;i=6068" BrowseName="NamespacePublicationDate">
+        <DisplayName>NamespacePublicationDate</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5020</Reference>
+        </References>
+        <Value>
+            <uax:DateTime>2024-04-04T06:21:32Z</uax:DateTime>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="String" ParentNodeId="ns=1;i=5020" NodeId="ns=1;i=6069" BrowseName="NamespaceUri">
+        <DisplayName>NamespaceUri</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5020</Reference>
+        </References>
+        <Value>
+            <uax:String>http://stl-gmbh.de/DxDm_sensor/</uax:String>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="String" ParentNodeId="ns=1;i=5020" NodeId="ns=1;i=6070" BrowseName="NamespaceVersion">
+        <DisplayName>NamespaceVersion</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5020</Reference>
+        </References>
+        <Value>
+            <uax:String>1.0.1</uax:String>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="IdType" ParentNodeId="ns=1;i=5020" ValueRank="1" NodeId="ns=1;i=6071" ArrayDimensions="0" BrowseName="StaticNodeIdTypes">
+        <DisplayName>StaticNodeIdTypes</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5020</Reference>
+        </References>
+        <Value>
+            <uax:ListOfInt32>
+                <uax:Int32>1</uax:Int32>
+            </uax:ListOfInt32>
+        </Value>
+    </UAVariable>
+    <UAVariable DataType="NumericRange" ParentNodeId="ns=1;i=5020" ValueRank="1" NodeId="ns=1;i=6072" ArrayDimensions="0" BrowseName="StaticNumericNodeIdRange">
+        <DisplayName>StaticNumericNodeIdRange</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5020</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="String" ParentNodeId="ns=1;i=5020" NodeId="ns=1;i=6073" BrowseName="StaticStringNodeIdPattern">
+        <DisplayName>StaticStringNodeIdPattern</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;i=5020</Reference>
+        </References>
+    </UAVariable>
+    <UAObject NodeId="ns=1;s=PubDS_10" BrowseName="1:PublishBatch10Values">
+        <DisplayName>PublishBatch10Values</DisplayName>
+        <Description>PublishBatch10ValuesDesc</Description>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=14534</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=PubDS_10_ConfigVersion</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=PubDS_10.CyclicDataSet</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=PubDS_10_MetaData</Reference>
+            <Reference ReferenceType="Organizes" IsForward="false">i=17371</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=PubDS_10_PublishedData</Reference>
+        </References>
+    </UAObject>
+    <UAVariable DataType="ConfigurationVersionDataType" ParentNodeId="ns=1;s=PubDS_10" NodeId="ns=1;s=PubDS_10_ConfigVersion" BrowseName="ConfigurationVersion">
+        <DisplayName>ConfigurationVersion</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=PubDS_10</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="Boolean" ParentNodeId="ns=1;s=PubDS_10" NodeId="ns=1;s=PubDS_10.CyclicDataSet" BrowseName="CyclicDataSet">
+        <DisplayName>CyclicDataSet</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=PubDS_10</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="DataSetMetaDataType" ParentNodeId="ns=1;s=PubDS_10" NodeId="ns=1;s=PubDS_10_MetaData" BrowseName="DataSetMetaData">
+        <DisplayName>DataSetMetaData</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=PubDS_10</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="PublishedVariableDataType" ParentNodeId="ns=1;s=PubDS_10" ValueRank="1" NodeId="ns=1;s=PubDS_10_PublishedData" ArrayDimensions="0" BrowseName="PublishedData">
+        <DisplayName>PublishedData</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=PubDS_10</Reference>
+        </References>
+    </UAVariable>
+    <UAObject NodeId="ns=1;s=PubDS_1" BrowseName="1:PublishRawValue">
+        <DisplayName>PublishRawValue</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=14534</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=PubDS_1_ConfigVersion</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=PubDS_1_CyclucDS</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=PubDS_1_MetaData</Reference>
+            <Reference ReferenceType="HasProperty">ns=1;s=PubDS_1_PubData</Reference>
+            <Reference ReferenceType="HasComponent" IsForward="false">i=17371</Reference>
+        </References>
+    </UAObject>
+    <UAVariable DataType="ConfigurationVersionDataType" ParentNodeId="ns=1;s=PubDS_1" NodeId="ns=1;s=PubDS_1_ConfigVersion" BrowseName="ConfigurationVersion">
+        <DisplayName>ConfigurationVersion</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=PubDS_1</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="Boolean" ParentNodeId="ns=1;s=PubDS_1" NodeId="ns=1;s=PubDS_1_CyclucDS" BrowseName="CyclicDataSet">
+        <DisplayName>CyclicDataSet</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=PubDS_1</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="DataSetMetaDataType" ParentNodeId="ns=1;s=PubDS_1" NodeId="ns=1;s=PubDS_1_MetaData" BrowseName="DataSetMetaData">
+        <DisplayName>DataSetMetaData</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=PubDS_1</Reference>
+        </References>
+    </UAVariable>
+    <UAVariable DataType="PublishedVariableDataType" ParentNodeId="ns=1;s=PubDS_1" ValueRank="1" NodeId="ns=1;s=PubDS_1_PubData" ArrayDimensions="0" BrowseName="PublishedData">
+        <DisplayName>PublishedData</DisplayName>
+        <References>
+            <Reference ReferenceType="HasTypeDefinition">i=68</Reference>
+            <Reference ReferenceType="HasProperty" IsForward="false">ns=1;s=PubDS_1</Reference>
+        </References>
+    </UAVariable>
+</UANodeSet>
