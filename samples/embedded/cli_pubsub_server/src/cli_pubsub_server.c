@@ -460,14 +460,14 @@ static SOPC_ReturnStatus write_batch(int32_t* batch, int32_t count, char* node_i
     
     SOPC_DataValue dv;
     SOPC_DataValue_Initialize(&dv);
-    dv.Value.ArrayType = SOPC_VariantArrayType_Array;
+    dv.Value.ArrayType = SOPC_VariantArrayType_Matrix;
     dv.Value.DoNotClear = false;
     dv.Value.BuiltInTypeId = SOPC_Int32_Id;
     dv.Value.Value.Matrix.ArrayDimensions = gArrayDimensions;
     dv.Value.Value.Matrix.Content.Int32Arr = batch;
-
-    dv.Value.Value.Array.Length = count;
-    dv.Value.Value.Array.Content.Int32Arr = (int32_t *)batch;
+    dv.Value.Value.Matrix.Dimensions = 1;
+    // dv.Value.Value.Array.Length = count;
+    // dv.Value.Value.Array.Content.Int32Arr = (int32_t *)batch;
 
     cacheSync_WriteToCache(&nid, &dv);
     return SOPC_STATUS_OK;
