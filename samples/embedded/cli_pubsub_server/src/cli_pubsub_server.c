@@ -449,6 +449,8 @@ void SOPC_Platform_Main(void)
     SOPC_Platform_Shutdown(true);
 }
 
+int32_t gArrayDimensions[1] = {10};
+
 /***************************************************/
 static SOPC_ReturnStatus write_batch(int32_t* batch, int32_t count, char* node_id)
 {
@@ -461,6 +463,9 @@ static SOPC_ReturnStatus write_batch(int32_t* batch, int32_t count, char* node_i
     dv.Value.ArrayType = SOPC_VariantArrayType_Array;
     dv.Value.DoNotClear = false;
     dv.Value.BuiltInTypeId = SOPC_Int32_Id;
+    dv.Value.Value.Matrix.ArrayDimensions = gArrayDimensions;
+    dv.Value.Value.Matrix.Content.Int32Arr = batch;
+
     dv.Value.Value.Array.Length = count;
     dv.Value.Value.Array.Content.Int32Arr = (int32_t *)batch;
 
