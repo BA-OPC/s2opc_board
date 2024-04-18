@@ -131,7 +131,7 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_GetStatic(void)
         if (alloc)
         {
             // Set publisher id
-            SOPC_PubSubConnection_Set_PublisherId_UInteger(connection, 123);
+            SOPC_PubSubConnection_Set_PublisherId_UInteger(connection, 42);
         }
         
     // Set acyclic publisher mode
@@ -145,28 +145,28 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_GetStatic(void)
 
     
     SOPC_WriterGroup* writerGroup = NULL;
-    /*** Pub Message 11 ***/
+    /*** Pub Message 14 ***/
     
     if (alloc)
     {
-        // GroupId = 11
+        // GroupId = 14
         // GroupVersion = 1
         // Interval = 100.000000 ms
         // Offest = -1 us
         // mqttTopic = NULL
         // encoding = SOPC_MessageEncodeUADP
-        writerGroup = SOPC_PubSubConfig_SetPubMessageAt(connection, 0, 11, 1, 100.000000, -1, SOPC_SecurityMode_None, NULL, SOPC_MessageEncodeUADP, 0);
+        writerGroup = SOPC_PubSubConfig_SetPubMessageAt(connection, 0, 14, 1, 100.000000, -1, SOPC_SecurityMode_None, NULL, SOPC_MessageEncodeUADP, 0);
         alloc = NULL != writerGroup;
     }
     
     if (alloc)
     {
-       // 1 data sets for message 11
+       // 1 data sets for message 14
        alloc = SOPC_WriterGroup_Allocate_DataSetWriter_Array(writerGroup, 1);
     }
 
     
-    /*** DataSetMessage No 1 of message 11 ***/
+    /*** DataSetMessage No 1 of message 14 ***/
     
     SOPC_DataSetWriter* writer = NULL;
     SOPC_PublishedDataSet* dataset = NULL;
@@ -185,28 +185,28 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_GetStatic(void)
         SOPC_PubSubConfig_SetPubVariableAt(dataset, 2, "ns=2;s=RawSingleSample_Z", SOPC_Int32_Id, -1, NULL); // Z
     }
     
-    /*** Pub Message 12 ***/
+    /*** Pub Message 15 ***/
     
     if (alloc)
     {
-        // GroupId = 12
+        // GroupId = 15
         // GroupVersion = 1
         // Interval = 1000.000000 ms
         // Offest = -1 us
         // mqttTopic = NULL
         // encoding = SOPC_MessageEncodeUADP
-        writerGroup = SOPC_PubSubConfig_SetPubMessageAt(connection, 1, 12, 1, 1000.000000, -1, SOPC_SecurityMode_None, NULL, SOPC_MessageEncodeUADP, 0);
+        writerGroup = SOPC_PubSubConfig_SetPubMessageAt(connection, 1, 15, 1, 1000.000000, -1, SOPC_SecurityMode_None, NULL, SOPC_MessageEncodeUADP, 0);
         alloc = NULL != writerGroup;
     }
     
     if (alloc)
     {
-       // 1 data sets for message 12
+       // 1 data sets for message 15
        alloc = SOPC_WriterGroup_Allocate_DataSetWriter_Array(writerGroup, 1);
     }
 
     
-    /*** DataSetMessage No 1 of message 12 ***/
+    /*** DataSetMessage No 1 of message 15 ***/
     
     if (alloc)
     {

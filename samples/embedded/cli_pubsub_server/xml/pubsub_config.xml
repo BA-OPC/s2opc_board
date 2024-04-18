@@ -1,7 +1,7 @@
 <PubSub xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="s2opc_pubsub_config.xsd">
-    <connection address="opc.udp://232.1.2.100:4840" mode="publisher" publisherId="i=123">
+    <connection address="opc.udp://232.1.2.100:4840" mode="publisher" publisherId="i=42">
         <!-- one to many -->
-        <message groupId="11" groupVersion="1" publishingInterval="100.">
+        <message groupId="14" groupVersion="1" publishingInterval="100.">
           <dataset writerId="1">
           <!-- one to many -->
             <variable nodeId="ns=2;s=RawSingleSample_X" displayName="X" dataType="Int32"/>
@@ -10,7 +10,7 @@
             <!-- the nodeId is used to retrieve the variable in the adresse space -->
           </dataset>
         </message>
-        <message groupId="12" groupVersion="1" publishingInterval="1000.">
+        <message groupId="15" groupVersion="1" publishingInterval="1000.">
           <dataset writerId="1">
             <!-- one to many -->
             <variable nodeId="ns=2;s=RawBatch10_X_Array" displayName="X-Array" dataType="Int32" valueRank="1" arrayDimensions="10"/>
