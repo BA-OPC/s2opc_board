@@ -290,9 +290,9 @@ static void setupPubSub(void)
 // } RawMeasurement;
 
 // RawMeasurement measurement_buffer[10];
-int32_t measurement_buffer_x[10] = {2} ;
-int32_t measurement_buffer_y[10] = {3};
-int32_t measurement_buffer_z[10] = {4};
+int32_t measurement_buffer_x[10];
+int32_t measurement_buffer_y[10];
+int32_t measurement_buffer_z[10];
 int32_t measurement_count = 0;
 
 static SOPC_ReturnStatus write_batch(int32_t* batch, int32_t count, char* node_id);
@@ -350,8 +350,15 @@ void SOPC_Platform_Main(void)
     gLastReceptionDateMs = SOPC_RealTime_Create(NULL);
 
     setupPubSub();
+    write_batch(measurement_buffer_x, ARRAY_SIZE(measurement_buffer_x), "ns=2;s=RawBatch10_X_Array");
+    write_batch(measurement_buffer_y, ARRAY_SIZE(measurement_buffer_y), "ns=2;s=RawBatch10_Y_Array");
+    write_batch(measurement_buffer_z, ARRAY_SIZE(measurement_buffer_z),"ns=2;s=RawBatch10_Z_Array");
     
-    
+
+    write_int_value(measurement_buffer_x[0], "ns=2;s=RawSingleSample_X");
+    write_int_value(measurement_buffer_y[0], "ns=2;s=RawSingleSample_Y");
+    write_int_value(measurement_buffer_z[0], "ns=2;s=RawSingleSample_Z");
+
     //{
     //    SOPC_DataValue tara;
     //    SOPC_DataValue_Initialize(&tara);
