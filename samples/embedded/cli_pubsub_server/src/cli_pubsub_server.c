@@ -60,7 +60,8 @@
 
 // project includes
 #include "cache.h"
-#include "pubsub_config_static.h"
+#include "pubsub_config_static_raw.h"
+#include "pubsub_config_static_batch.h"
 #include "static_security_data.h"
 #include "test_config.h"
 
@@ -262,13 +263,17 @@ static void clearPubSub(void)
     Cache_Clear();
 }
 
+typedef SOPC_PubSubConfiguration* (*config_func_t)(double);
+config_func_t config_funcs[2];
+
 /*****************************************************
  * @brief Creates and setup the PubSub, using KConfig parameters
  */
-static void setupPubSub(void)
+static void setupPubSub(size_t publisher_config, double interval)
 {
     // CONFIGURE PUBSUB
-    pPubSubConfig = SOPC_PubSubConfig_GetStatic();
+    SOPC_ASSERT(publisher_config < ARRAY_SIZE(config_funcs));
+    pPubSubConfig = config_funcs[publisher_config](interval);
     SOPC_ASSERT(NULL != pPubSubConfig && "SOPC_PubSubConfig_GetStatic failed");
 
     /* Pub target configuration */
@@ -300,6 +305,10 @@ static SOPC_ReturnStatus write_int_value(int32_t value, char* node_id);
 /***************************************************/
 void SOPC_Platform_Main(void)
 {
+
+    config_funcs[0] = SOPC_PubSubConfig_Raw_GetStatic;
+    config_funcs[1] = SOPC_PubSubConfig_Batch_GetStatic;
+
     SOPC_ReturnStatus status;
     PRINT("Build date : " __DATE__ " " __TIME__ "\n");
 
@@ -349,7 +358,7 @@ void SOPC_Platform_Main(void)
 
     gLastReceptionDateMs = SOPC_RealTime_Create(NULL);
 
-    setupPubSub();
+    setupPubSub(1, 1000.0);
     write_batch(measurement_buffer_x, ARRAY_SIZE(measurement_buffer_x), "ns=2;s=RawBatch10_X_Array");
     write_batch(measurement_buffer_y, ARRAY_SIZE(measurement_buffer_y), "ns=2;s=RawBatch10_Y_Array");
     write_batch(measurement_buffer_z, ARRAY_SIZE(measurement_buffer_z),"ns=2;s=RawBatch10_Z_Array");

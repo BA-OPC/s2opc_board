@@ -1,0 +1,15 @@
+<PubSub xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="s2opc_pubsub_config.xsd">
+    <connection address="opc.udp://232.1.2.100:4840" mode="publisher" publisherId="i=42">
+        <!-- one to many -->
+        <message groupId="15" groupVersion="1" publishingInterval="1000.">
+          <dataset writerId="1">
+            <!-- one to many -->
+            <variable nodeId="ns=2;s=RawBatch10_X_Array" displayName="X-Array" dataType="Int32" valueRank="1" arrayDimensions="10"/>
+            <variable nodeId="ns=2;s=RawBatch10_Y_Array" displayName="Y-Array" dataType="Int32" valueRank="1" arrayDimensions="10"/>
+            <variable nodeId="ns=2;s=RawBatch10_Z_Array" displayName="Z-Array" dataType="Int32" valueRank="1" arrayDimensions="10"/>
+            <variable nodeId="ns=2;s=RawBatch10_Time" displayName="TimeFirstSample" dataType="DateTime"/>
+          </dataset>
+        </message>
+      </connection>
+</PubSub>
+
