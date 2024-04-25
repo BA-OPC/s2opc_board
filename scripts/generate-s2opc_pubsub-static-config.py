@@ -21,7 +21,7 @@
 import xml.etree.ElementTree as ET
 import argparse
 import sys, os
-
+args : argparse.Namespace
 TAG_PUBSUB = "PubSub"
 
 TAG_CONNECTION = "connection"
@@ -188,7 +188,9 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_%sGetStatic(double interval)
 {
     bool alloc = true;
     SOPC_PubSubConfiguration* config = SOPC_PubSubConfiguration_Create();
-    """ % (f"{sys.argv[3]}_" or ""))
+    """ % (f"{args.name}_" if args.name is not "" else ""
+        )
+        )
 
     if len(pubConnections) + len(subConnections) > 0:
         result.add("""
@@ -917,6 +919,9 @@ def main():
                            help='Path to Pub-Sub configuration XML file')
     argparser.add_argument('c_file', metavar='C_FILE',
                            help='Path to the generated C file')
+    argparser.add_argument('name', metavar='name',
+                           help='name of config', default='')
+    global args
     args = argparser.parse_args()
 
     print('Generating C Pub-Sub configuration...')
