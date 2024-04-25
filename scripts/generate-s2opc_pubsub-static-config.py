@@ -184,11 +184,11 @@ def handlePubSub(pubSub, result):
     # Create configuration and define local variable
     ##
     result.add("""
-SOPC_PubSubConfiguration* SOPC_PubSubConfig_GetStatic(void)
+SOPC_PubSubConfiguration* SOPC_PubSubConfig_%sGetStatic(double interval)
 {
     bool alloc = true;
     SOPC_PubSubConfiguration* config = SOPC_PubSubConfiguration_Create();
-    """)
+    """ % (f"{sys.argv[3]}_" or ""))
 
     if len(pubConnections) + len(subConnections) > 0:
         result.add("""
@@ -375,7 +375,7 @@ def handlePubMessage(cnxContext, message, msgIndex, result):
         // Offest = %d us
         // mqttTopic = %s
         // encoding = %s
-        writerGroup = SOPC_PubSubConfig_SetPubMessageAt(connection, %d, %d, %d, %f, %d, %s, %s, %s, %d);
+        writerGroup = SOPC_PubSubConfig_SetPubMessageAt(connection, %d, %d, %d,interval <=0 ? %f : interval, %d, %s, %s, %s, %d);
         alloc = NULL != writerGroup;
     }
     """% (msgContext.id, msgContext.version, msgContext.interval, msgContext.offset,msgContext.mqttTopic,
