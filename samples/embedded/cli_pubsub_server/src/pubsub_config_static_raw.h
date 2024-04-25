@@ -3,6 +3,6 @@
 
 #include "sopc_pubsub_conf.h"
 
-SOPC_PubSubConfiguration* SOPC_PubSubConfig_Raw_GetStatic(double publish_interval);
+SOPC_PubSubConfiguration* SOPC_PubSubConfig_Raw_GetStatic(double interval);
 
 #endif /* PUBSUB_CONF_STATIC_H_ */

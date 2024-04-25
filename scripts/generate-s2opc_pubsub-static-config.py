@@ -188,7 +188,7 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_%sGetStatic(double interval)
 {
     bool alloc = true;
     SOPC_PubSubConfiguration* config = SOPC_PubSubConfiguration_Create();
-    """ % (f"{args.name}_" if args.name is not "" else ""
+    """ % (f"{args.name}_" if args.name != "" else ""
         )
         )
 

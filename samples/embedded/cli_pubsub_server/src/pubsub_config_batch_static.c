@@ -17,11 +17,10 @@
  * under the License.
  */
 
-#include "pubsub_config_static_batch.h"
+#include "pubsub_config_static.h"
 
 #include <stdbool.h>
 #include <string.h>
-#include <math.h>
 
 #include "sopc_assert.h"
 #include "samples_platform_dep.h"
@@ -107,7 +106,7 @@ static void SOPC_PubSubConfig_SetPubVariableAt(SOPC_PublishedDataSet* dataset,
 }
 
 
-SOPC_PubSubConfiguration* SOPC_PubSubConfig_Batch_GetStatic(double publish_interval)
+SOPC_PubSubConfiguration* SOPC_PubSubConfig_Batch_GetStatic(double interval)
 {
     bool alloc = true;
     SOPC_PubSubConfiguration* config = SOPC_PubSubConfiguration_Create();
@@ -173,7 +172,7 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_Batch_GetStatic(double publish_inter
         // Offest = -1 us
         // mqttTopic = NULL
         // encoding = SOPC_MessageEncodeUADP
-        writerGroup = SOPC_PubSubConfig_SetPubMessageAt(connection, 0, 15, 1, publish_interval <= 0 ? 1000.000000 : publish_interval, -1, SOPC_SecurityMode_None, NULL, SOPC_MessageEncodeUADP, 0);
+        writerGroup = SOPC_PubSubConfig_SetPubMessageAt(connection, 0, 15, 1,interval <=0 ? 1000.000000 : interval, -1, SOPC_SecurityMode_None, NULL, SOPC_MessageEncodeUADP, 0);
         alloc = NULL != writerGroup;
     }
     
