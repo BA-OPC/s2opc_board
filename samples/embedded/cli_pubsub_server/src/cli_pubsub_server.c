@@ -47,6 +47,7 @@
 
 // S2OPC includes
 #include "p_sopc_sockets.h"
+#include "p_sopc_time.h"
 #include "samples_platform_dep.h"
 #include "sopc_assert.h"
 #include "sopc_atomic.h"
@@ -56,6 +57,7 @@
 #include "sopc_enums.h"
 #include "sopc_logger.h"
 #include "sopc_macros.h"
+#include "sopc_platform_time.h"
 #include "sopc_raw_sockets.h"
 #include "sopc_udp_sockets.h"
 #include "sopc_mem_alloc.h"
@@ -120,6 +122,7 @@ static int32_t gStopped = true;
 /***************************************************/
 static SOPC_PubSubConfiguration* pPubSubConfig = NULL;
 static SOPC_PubSourceVariableConfig* pSourceConfig = NULL;
+static SOPC_SKManager* g_skmanager = NULL;
 static bool gPubStarted = false;
 // Date of last reception on Sub
 static SOPC_RealTime* gLastReceptionDateMs = NULL;
@@ -169,6 +172,61 @@ static void cacheSync_WriteToCache(const SOPC_NodeId* pNid, const SOPC_DataValue
         SOPC_DataValue_Copy(pDvCache, pDv);
     }
     Cache_Unlock();
+}
+
+static SOPC_SKManager* createSKmanager(void)
+{
+    /* Create Service Keys manager and set constant keys */
+    SOPC_SKManager* skm = SOPC_SKManager_Create();
+    SOPC_ASSERT(NULL != skm && "SOPC_SKManager_Create failed");
+    uint32_t nbKeys = 0;
+    SOPC_Buffer* keysBuffer =
+        SOPC_Buffer_Create(sizeof(pubSub_keySign) + sizeof(pubSub_keyEncrypt) + sizeof(pubSub_keyNonce));
+    SOPC_ReturnStatus status = (NULL == keysBuffer ? SOPC_STATUS_OUT_OF_MEMORY : SOPC_STATUS_OK);
+
+    if (SOPC_STATUS_OK == status)
+    {
+        status = SOPC_Buffer_Write(keysBuffer, pubSub_keySign, (uint32_t) sizeof(pubSub_keySign));
+    }
+
+    if (SOPC_STATUS_OK == status)
+    {
+        status = SOPC_Buffer_Write(keysBuffer, pubSub_keyEncrypt, (uint32_t) sizeof(pubSub_keyEncrypt));
+    }
+
+    if (SOPC_STATUS_OK == status)
+    {
+        status = SOPC_Buffer_Write(keysBuffer, pubSub_keyNonce, (uint32_t) sizeof(pubSub_keyNonce));
+    }
+    SOPC_ByteString keys;
+    SOPC_ByteString_Initialize(&keys);
+    SOPC_String securityPolicyUri;
+    SOPC_String_Initialize(&securityPolicyUri);
+    if (SOPC_STATUS_OK == status)
+    {
+        nbKeys = 1;
+        // Set buffer as a byte string for API compatibility
+        keys.DoNotClear = true;
+        keys.Length = (int32_t) keysBuffer->length;
+        keys.Data = (SOPC_Byte*) keysBuffer->data;
+        // Set security policy
+        status = SOPC_String_AttachFromCstring(&securityPolicyUri, SOPC_SecurityPolicy_PubSub_Aes256_URI);
+    }
+
+    if (SOPC_STATUS_OK == status)
+    {
+        status = SOPC_SKManager_SetKeys(skm, &securityPolicyUri, 1, &keys, nbKeys, UINT32_MAX, UINT32_MAX);
+    }
+
+    if (SOPC_STATUS_OK != status)
+    {
+        SOPC_SKManager_Clear(skm);
+        SOPC_Free(skm);
+        skm = NULL;
+    }
+    SOPC_Buffer_Delete(keysBuffer);
+
+    return skm;
 }
 
 /***************************************************/
@@ -286,6 +344,13 @@ static void setupPubSub(size_t publisher_config, double interval)
     pSourceConfig = SOPC_PubSourceVariableConfig_Create(&Cache_GetSourceVariables);
     SOPC_ASSERT(NULL != pSourceConfig && "SOPC_PubSourceVariableConfig_Create failed");
 
+    g_skmanager = createSKmanager();
+
+    SOPC_ASSERT(NULL != g_skmanager && "SOPC_SKManager_SetKeys failed");
+    SOPC_PubSubSKS_Init();
+    SOPC_PubSubSKS_SetSkManager(g_skmanager);
+
+
     // Configure SKS for PubSub
     // TODO: Has been removed from S2OPC. Investigate!!!
 //    SOPC_KeyBunch_init_static(pubSub_keySign, sizeof(pubSub_keySign), pubSub_keyEncrypt, sizeof(pubSub_keyEncrypt),
@@ -308,6 +373,7 @@ int32_t measurement_count = 0;
 
 static SOPC_ReturnStatus write_batch(int32_t* batch, int32_t count, char* node_id);
 static SOPC_ReturnStatus write_int_value(int32_t value, char* node_id);
+static SOPC_ReturnStatus write_time_value(char* node_id);
 /***************************************************/
 void SOPC_Platform_Main(void)
 {
@@ -412,6 +478,7 @@ void SOPC_Platform_Main(void)
     write_int_value(measurement_buffer_x[0], "ns=2;s=RawSingleSample_X");
     write_int_value(measurement_buffer_y[0], "ns=2;s=RawSingleSample_Y");
     write_int_value(measurement_buffer_z[0], "ns=2;s=RawSingleSample_Z");
+    write_time_value("ns=2;s=RawBatch10_Time");
 
     //{
     //    SOPC_DataValue tara;
@@ -471,16 +538,18 @@ void SOPC_Platform_Main(void)
         measurement_buffer_x[measurement_count] = val_mv ;
         measurement_buffer_y[measurement_count] = val_mv &0xAAAAAAAA;
         measurement_buffer_z[measurement_count] = val_mv &0x55555555;
-        
-        if (measurement_count++ > ARRAY_SIZE(measurement_buffer_x)) {
+        measurement_count++;
+        if (measurement_count >= ARRAY_SIZE(measurement_buffer_x)) {
             write_batch(measurement_buffer_x, ARRAY_SIZE(measurement_buffer_x), "ns=2;s=RawBatch10_X_Array");
             write_batch(measurement_buffer_y, ARRAY_SIZE(measurement_buffer_y), "ns=2;s=RawBatch10_Y_Array");
             write_batch(measurement_buffer_z, ARRAY_SIZE(measurement_buffer_z),"ns=2;s=RawBatch10_Z_Array");
             
-
             write_int_value(val_mv, "ns=2;s=RawSingleSample_X");
             write_int_value(val_mv & 0xAAAAAAAA, "ns=2;s=RawSingleSample_Y");
             write_int_value(val_mv & 0x55555555, "ns=2;s=RawSingleSample_Z");
+            write_time_value("ns=2;s=RawBatch10_Time");
+      
+            
 
             measurement_count = 0;
         }
@@ -577,6 +646,26 @@ static SOPC_ReturnStatus write_int_value(int32_t value, char* node_id)
    dv.Value.DoNotClear = false;
    dv.Value.BuiltInTypeId = SOPC_Int32_Id;
    dv.Value.Value.Int32 = value;
+
+   cacheSync_WriteToCache(&nid, &dv);
+   SOPC_NodeId_Clear(&nid);
+   SOPC_DataValue_Clear(&dv);
+   return SOPC_STATUS_OK;
+}
+
+static SOPC_ReturnStatus write_time_value(char* node_id)
+{
+   SOPC_NodeId nid;
+   SOPC_ReturnStatus status = SOPC_NodeId_InitializeFromCString(&nid, node_id, (int32_t) strlen(node_id));
+   SOPC_ASSERT(SOPC_STATUS_OK == status);
+   SOPC_DataValue dv;
+   SOPC_DataValue_Initialize(&dv);
+
+   dv.Value.ArrayType = SOPC_VariantArrayType_SingleValue;
+   dv.Value.DoNotClear = false;
+   dv.Value.BuiltInTypeId = SOPC_DateTime_Id;
+   int64_t time = SOPC_Time_GetCurrentTimeUTC();
+   dv.Value.Value.Date = time;
 
    cacheSync_WriteToCache(&nid, &dv);
    SOPC_NodeId_Clear(&nid);
@@ -749,4 +838,4 @@ static SOPC_ReturnStatus write_int_value(int32_t value, char* node_id)
 //     SOPC_DataValue_Clear(dv_read);
 //     SOPC_Free(dv_read);
 //     return 0;
-// }
+// 
