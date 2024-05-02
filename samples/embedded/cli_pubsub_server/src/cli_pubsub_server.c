@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include "libs2opc_common_config.h"
 #include "libs2opc_request_builder.h"
@@ -71,6 +72,7 @@
 #include "static_security_data.h"
 #include "test_config.h"
 
+#include <time.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/adc.h>
@@ -365,7 +367,76 @@ static void setupPubSub(size_t publisher_config, double interval)
 //     int32_t z;
 // } RawMeasurement;
 
-// RawMeasurement measurement_buffer[10];
+static SOPC_String next_line(SOPC_String* data);
+static SOPC_String next_line(SOPC_String* data) {
+    SOPC_String line = {0};
+
+    data->DoNotClear = true;
+    while (*data->Data == '\r' || *data->Data == '\n') {
+        data->Data++;
+        data->Length--;
+    }
+
+    line.Data = data->Data;
+    while (line.Length < data->Length && *data->Data != '\r' && *data->Data != '\n') {
+        line.Length++;
+        data->Data++;
+        data->Length--;
+    }
+
+    return line;
+}
+static uint32_t parse_uint32(SOPC_String data);
+static uint32_t parse_uint32(SOPC_String data)
+{
+    bool num_started = false;
+    uint32_t result = 0;
+    for (int32_t i = 0; i < data.Length; i++) {
+        if (data.Data[i] >= 0x30 && data.Data[i] <= 0x39) {
+            num_started = true;
+            result *= 10;
+            result += ((uint32_t)data.Data[i]) - 0x30;
+
+        } else if (num_started) {
+            break;
+        }
+    }
+    return result;
+}
+
+static double parse_double(SOPC_String data);
+static double parse_double(SOPC_String data)
+{
+    bool num_started = false;
+    bool is_fraction = false;
+    double fract_power = 10;
+
+    double result = 0;
+
+    for (int32_t i = 0; i < data.Length; i++) {
+        if (data.Data[i] >= 0x30 && data.Data[i] <= 0x39) {
+            num_started = true;
+            double digit = (double)(data.Data[i] - 0x30);
+
+            if (is_fraction) {
+                result +=  digit * (1.0/fract_power);
+                fract_power *= 10;
+
+            } else {
+                result *= 10.0;
+                result += digit;
+            }
+
+        } else if (num_started && data.Data[i] == '.') {
+            is_fraction = true;
+        } else if (num_started) {
+            break;
+        }
+    }
+    return result;
+}
+
+
 int32_t measurement_buffer_x[10];
 int32_t measurement_buffer_y[10];
 int32_t measurement_buffer_z[10];
@@ -430,46 +501,77 @@ void SOPC_Platform_Main(void)
 
     gLastReceptionDateMs = SOPC_RealTime_Create(NULL);
 
-    // TODO: figure out how to send using zephyr or S2OPC
-    static struct addrinfo hints;
-    struct addrinfo* res;
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
-    int st = getaddrinfo("192.168.137.13", "8080", &hints, &res);
-    if (st < 0) {
+    SOPC_Sleep(2000);
+
+    uint32_t config_selector = 0;
+    double config_interval = 1000.0;
+
+    SOPC_Socket_AddressInfo* config_server_addr = SOPC_UDP_SocketAddress_Create(false, "192.168.137.13", "8080");
+    SOPC_Socket_AddressInfo* local_addr = SOPC_UDP_SocketAddress_Create(false, "0.0.0.0", NULL);
+    Socket sock;
+    const char* itf_name = SOPC_Platform_Get_Default_Net_Itf();
+    status = SOPC_UDP_Socket_CreateToSend(local_addr, itf_name, false, &sock);
+    if (status != SOPC_STATUS_OK) {
+        PRINT("Failed to create UDP Socket");
         return;
     }
-    int sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-    status = connect(sock, res->ai_addr, res->ai_addrlen);
-    if (status < 0) return;
-    ssize_t sent = send(sock, "GET hello", 9, 0);
-    if (sent != 9) return;
-    close(sock);
+    uint8_t endpoint_len = 26;
 
-//    SOPC_Socket_AddressInfo* config_server_addr = SOPC_UDP_SocketAddress_Create(false, "192.168.137.13", "8080");
-//    SOPC_Socket_AddressInfo* local_addr = SOPC_UDP_SocketAddress_Create(false, "192.168.137.21", NULL);
-//    Socket sock;
-//    const char* itf_name = SOPC_Platform_Get_Default_Net_Itf();
-//    status = SOPC_UDP_Socket_CreateToSend(local_addr, itf_name, false, &sock);
-//    if (status != SOPC_STATUS_OK) {
-//        PRINT("Failed to create UDP Socket");
-//        return;
-//    }
-//    SOPC_Buffer* le_buff = SOPC_Buffer_Create(5);
-//    SOPC_Buffer_Write(le_buff, "Hallo", 5);
-//    SOPC_Buffer_SetPosition(le_buff, 0);
-//    status = SOPC_UDP_Socket_SendTo(sock, config_server_addr, le_buff);
-//    if (status != SOPC_STATUS_OK) {
-//        PRINT("Failed to send UDP Message");
-//        return;
-//    }
-//    SOPC_Buffer_Delete(le_buff);
-//    SOPC_UDP_Socket_Close(&sock);
-//
+    SOPC_Buffer* le_buff = SOPC_Buffer_Create(1024);
+    SOPC_Buffer_Write(le_buff, "REGISTER\n", 9);
+    SOPC_Buffer_Write(le_buff, (char*)&endpoint_len, 1);
+    SOPC_Buffer_Write(le_buff, "opc.udp://232.1.2.100:4840", 26);
+    SOPC_Buffer_SetPosition(le_buff, 0);
+
+    SOPC_Buffer* receive_buff = SOPC_Buffer_Create(1024);
+    while(1) {
+        status = SOPC_UDP_Socket_SendTo(sock, config_server_addr, le_buff);
+        if (status != SOPC_STATUS_OK) {
+            PRINT("\nFailed to send UDP Message! %d\n", status);
+            return;
+        }
+        status = SOPC_UDP_Socket_ReceiveFrom(sock, receive_buff);
+        if (status == SOPC_STATUS_OK && receive_buff->length > 10) {
+            SOPC_String token;
+            SOPC_String remaining = {
+                .Length = receive_buff->length,
+                .DoNotClear = true,
+                .Data = receive_buff->data,
+            };
+
+            token = next_line(&remaining);
+            if (token.Length != 9 || strncmp((char*)token.Data,"CONFIGURE", 9) != 0) {
+                PRINT("Unknown message type: %*s", token.Length, token.Data);
+                continue;
+            }
+
+            token = next_line(&remaining);
+            if (token.Length <= 0) {
+                PRINT("Missing \"config_selector\"!\n");
+                continue;
+            }
+            config_selector = parse_uint32(token);
+
+            token = next_line(&remaining);
+            if (token.Length <= 0) {
+                PRINT("Missing \"config_interval\"!\n");
+                continue;
+            }
+            config_interval = parse_double(token);
+
+            PRINT("Configured Publisher! { selector: %du, interval: %f }\n", config_selector, config_interval);
+            break;
+        }
+        SOPC_Sleep(500);
+    }
+    SOPC_Buffer_Delete(le_buff);
+    SOPC_Buffer_Delete(receive_buff);
+
+    SOPC_UDP_Socket_Close(&sock);
     //SOPC_SocketAddress_Delete(&local_addr);
     //SOPC_SocketAddress_Delete(&config_server_addr);
 
-    setupPubSub(1, 1000.0);
+    setupPubSub(config_selector, config_interval);
     write_batch(measurement_buffer_x, ARRAY_SIZE(measurement_buffer_x), "ns=2;s=RawBatch10_X_Array");
     write_batch(measurement_buffer_y, ARRAY_SIZE(measurement_buffer_y), "ns=2;s=RawBatch10_Y_Array");
     write_batch(measurement_buffer_z, ARRAY_SIZE(measurement_buffer_z),"ns=2;s=RawBatch10_Z_Array");
