@@ -172,7 +172,7 @@ SOPC_PubSubConfiguration* SOPC_PubSubConfig_Raw_GetStatic(double interval)
         // Offest = -1 us
         // mqttTopic = NULL
         // encoding = SOPC_MessageEncodeUADP
-        writerGroup = SOPC_PubSubConfig_SetPubMessageAt(connection, 0, 14, 1,interval <=0 ? 100.000000 : interval, -1, SOPC_SecurityMode_None, NULL, SOPC_MessageEncodeUADP, 0);
+        writerGroup = SOPC_PubSubConfig_SetPubMessageAt(connection, 0, 14, 1,interval <=0 ? 100.000000 : interval, -1, SOPC_SecurityMode_Sign, NULL, SOPC_MessageEncodeUADP, 0);
         alloc = NULL != writerGroup;
     }
     
